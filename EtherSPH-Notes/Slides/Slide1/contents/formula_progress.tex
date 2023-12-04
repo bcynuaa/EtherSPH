@@ -1,0 +1,368 @@
+\section{公式查询及推导进度}
+
+\subsection{核函数插值的公式推导}
+
+\begin{frame}
+    \frametitle{插值核函数的一般形式}
+Usually, kernel function has the form of:
+
+\begin{equation}
+    W(\vec{r})=W\left(
+        \frac{r}{h}
+    \right)=W(q)
+\end{equation}
+
+where:
+
+\begin{equation}
+    \begin{aligned}
+        q &= \frac{r}{h} \quad &\Rightarrow \quad \frac{dq}{dr}= \frac{1}{h}\\
+        r &= \sqrt{\sum_{k=1}^d x_k^2} \quad &\Rightarrow \quad \frac{\partial r}{\partial x_k} = \frac{x_k}{r}\\
+    \end{aligned}
+\end{equation}
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{插值核函数的梯度}
+    \begin{equation}
+        \begin{aligned}
+            \frac{\partial W}{\partial x_k} &= \frac{\partial W}{\partial q}\frac{\partial q}{\partial x_k}\\
+            &= \frac{\partial W}{\partial q}\frac{\partial q}{\partial r}\frac{\partial r}{\partial x_k}\\
+            &= \frac{\partial W}{\partial q}\frac{1}{h}\frac{x_k}{r}\\
+            &= \frac{1}{h}\frac{x_k}{r}\frac{\partial W}{\partial q}\\
+            &= \frac{1}{h}\frac{x_k}{r}W^\prime
+        \end{aligned}
+    \end{equation}
+    thus it's obvious that:
+    \begin{equation}
+        \nabla W = \frac{1}{h}\frac{\vec{r}}{r}W^\prime
+        ,\quad |\nabla W| = \frac{1}{h}|W^\prime|
+    \end{equation}
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{插值核函数的拉普拉斯算子值}
+    
+\begin{equation}
+    \begin{aligned}
+        \frac{\partial^2 W}{\partial x_k^2} &= \frac{\partial}{\partial x_k}\left(
+            \frac{1}{h}\frac{x_k}{r}W^\prime
+        \right)\\
+        &= \frac{1}{h}W^\prime \left(
+            \frac{1}{r} - \frac{x_k^2}{r^3}
+        \right)+
+        \frac{1}{h}\frac{x_k}{r}\frac{\partial W^\prime}{\partial x_k}\\
+        &= \frac{1}{h}W^\prime \frac{r^2-x_k^2}{r^3}+
+        \frac{x_k}{hr} \frac{\partial W^\prime}{\partial q}\frac{\partial q}{\partial r}\frac{\partial r}{\partial x_k}\\
+        &= \frac{1}{h}W^\prime \frac{r^2-x_k^2}{r^3}+
+        \frac{x_k}{hr} \frac{\partial W^\prime}{\partial q}\frac{1}{h}\frac{x_k}{r}\\
+        &= \frac{1}{h}W^\prime \frac{r^2-x_k^2}{r^3}+
+        \frac{1}{h^2r^2}x_k^2 W^{\prime\prime}\\
+        &= \frac{1}{h}W^\prime \frac{r^2-x_k^2}{r^3}+
+        \frac{x_k^2}{h^2r^2} W^{\prime\prime}
+    \end{aligned}
+\end{equation}
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{插值核函数的拉普拉斯算子值}
+    \begin{equation}
+        \nabla^2 W = \sum_{k=1}^d \frac{\partial^2 W}{\partial x_k^2} = 
+            \frac{d-1}{hr}W^\prime + \frac{1}{h^2}W^{\prime\prime}
+    \end{equation}
+    
+    when $r\to 0$, we have:
+    
+    \begin{equation}
+        \nabla^2 W = \lim_{r/h\to 0} \nabla^2 W = \frac{d}{h^2}W^{\prime\prime}
+    \end{equation}
+\end{frame}
+
+\subsection{核函数插值格式}
+
+\begin{frame}
+    \frametitle{梯度的核函数插值格式}
+    From the property shared with $\delta$ function:
+
+\begin{equation}
+    A(\vec{r}) = 
+    \int_{\Omega} A(\vec{r}^\prime) 
+    W(\vec{r} - \vec{r}^\prime) \mathrm{d}\vec{r}^\prime
+\end{equation}
+
+In particle discretization, we have:
+
+\begin{equation}
+    A_i = \sum_{j} \frac{m_j}{\rho_j} A_j W_{ij}
+\end{equation}
+
+where:
+
+\begin{equation}
+    W_{ij} = W(\vec{r}_i - \vec{r}_j)\quad \text{and} 
+    \quad \sum_{j} \frac{m_j}{\rho_j} W_{ij} = 1
+\end{equation}
+
+This provides a way to interpolate the value of $A$ at any point $\vec{r}$.
+\end{frame}
+
+\begin{frame}
+    \frametitle{梯度的核函数插值格式}
+    Consider a scalar function $A(\vec{r})$ distributed in space $\mathbb{R}^\text{dim}$. 
+Let's see $\nabla A(\vec{r})$:
+\begin{equation}
+    \begin{aligned}
+        \nabla A(\vec{r}) 
+        &= \int_{\Omega} \nabla A(\vec{r}^\prime) W(\vec{r} - \vec{r}^\prime) \mathrm{d}\vec{r}^\prime \\
+        &= \int_{\Omega} \nabla A(\vec{r}^\prime) W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime \\
+        &= \int_{\partial \Omega} A(\vec{r}^\prime) \vec{n} W(\vec{r}^\prime - \vec{r}) \mathrm{d}S^\prime
+        -\int_{\Omega} A(\vec{r}^\prime) \nabla W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime\\
+        &= \int_{\Omega} A(\vec{r}^\prime) \nabla W(\vec{r} - \vec{r}^\prime) \mathrm{d}\vec{r}^\prime
+    \end{aligned}
+\end{equation}
+
+The above formula use property of compactness and symmetry of kernel function. 
+In particle discretization, we have:
+
+\begin{equation}
+    \nabla A_i = \sum_{j} \frac{m_j}{\rho_j} A_j \nabla W_{ij}
+\end{equation}
+\end{frame}
+
+\begin{frame}
+    \frametitle{梯度的核函数插值格式}
+    where:
+
+\begin{equation}
+    \nabla W_{ij} = \nabla W(\vec{r}_i - \vec{r}_j)
+\end{equation}
+
+However, according to 'Smoothed Particle Hydrodynamic' from Monaghan 1992, 
+such form of 1-st derivative interpolation is not accurate enough. 
+He proposed a better way to do such interpolation. 
+Supposing we have a scalar called $\phi$, let's consider $\phi\nabla A$ 's approximation:
+
+\begin{equation}
+    \begin{aligned}
+        \phi\nabla A = \nabla(\phi A) - A\nabla\phi
+    \end{aligned}
+\end{equation}
+\end{frame}
+
+\begin{frame}
+    \frametitle{梯度的核函数插值格式}
+
+    Use interpolation above, we have:
+\begin{equation}
+    \begin{aligned}
+        \phi_i (\nabla A)_i &= 
+            \sum_j \frac{m_j}{\rho_j} \phi_j A_j \nabla W_{ij} -
+            A_i\sum_j \frac{m_j}{\rho_j}  \phi_j \nabla W_{ij}\\
+            &= \sum_j \frac{m_j}{\rho_j} \phi_j( A_j-A_i) \nabla W_{ij}
+    \end{aligned}
+\end{equation}
+
+thus we have:
+
+\begin{equation}
+    (\nabla A)_i = \frac{1}{\phi_i}\sum_j \frac{m_j}{\rho_j} \phi_j( A_j-A_i) \nabla W_{ij} 
+\end{equation}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{梯度的核函数插值格式}
+
+    noting that $A_{ij} = A_i - A_j$, we have:
+
+\begin{equation}
+    (\nabla A)_i = -\frac{1}{\phi_i}\sum_j \frac{m_j}{\rho_j}\phi_j A_{ij} \nabla W_{ij}
+\end{equation}
+
+For example, when we focus on $\frac{1}{\rho}\nabla p$, 
+we have 2 ways to obtain its value:
+\begin{equation}
+    \begin{aligned}
+        \phi = 1 \quad &\Rightarrow \quad 
+            (\nabla p)_i = \sum_j \frac{m_j}{\rho_j} (p_j-p_i) \nabla W_{ij} \\
+        \phi_i = \frac{1}{\rho} \quad &\Rightarrow \quad 
+            \frac{1}{\rho}\nabla p = \nabla \left(
+                \frac{p}{\rho}
+            \right)+
+            \frac{p}{\rho^2}\nabla \rho\\
+            &\Rightarrow\quad
+            \left(\frac{\nabla p}{\rho}\right)_i=
+            \sum_j m_j \left(
+                \frac{p_j}{\rho_j^2}+\frac{p_i}{\rho_i^2}
+            \right) \nabla W_{ij}
+    \end{aligned}
+\end{equation}
+
+当我推导到这里的时候，就感觉到这个数值格式似乎存在一些问题。
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{散度的核函数插值格式}
+    Now let's consider a vector $\vec{A}$ distributed in space $\mathbb{R}^\text{dim}$.
+    Let's see $\nabla\cdot\vec{A}$:
+    \begin{equation}
+        \begin{aligned}
+            \nabla\cdot\vec{A}(\vec{r}) &= \int_{\Omega} \nabla\cdot\vec{A}(\vec{r}^\prime) W(\vec{r} - \vec{r}^\prime) \mathrm{d}\vec{r}^\prime \\
+            &= \int_{\Omega} \nabla\cdot\vec{A}(\vec{r}^\prime) W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime \\
+            &= \int_{\partial \Omega} \vec{A}(\vec{r}^\prime) \cdot \vec{n} W(\vec{r}^\prime - \vec{r}) \mathrm{d}S^\prime -
+            \int_{\Omega} \vec{A}(\vec{r}^\prime) \cdot \nabla W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime\\
+            &= \int_{\Omega} \vec{A}(\vec{r}^\prime) \cdot \nabla W(\vec{r} - \vec{r}^\prime) \mathrm{d}\vec{r}^\prime
+        \end{aligned}
+    \end{equation}
+    
+    In particle discretization, we have:
+    
+    \begin{equation}
+        (\nabla\cdot\vec{A})_i = \sum_{j} \frac{m_j}{\rho_j} \vec{A}_j \cdot \nabla W_{ij}
+    \end{equation}
+    
+\end{frame}
+
+\begin{frame}
+    \frametitle{散度的核函数插值格式}
+    where:
+
+\begin{equation}
+    \nabla W_{ij} = \nabla W(\vec{r}_i - \vec{r}_j)
+\end{equation}
+
+However, this way o interpolation is not accurate enough. 
+Let's consider a scalar $\phi$ here:
+
+\begin{equation}
+    \phi \nabla\cdot \vec{A} = \nabla\cdot(\phi \vec{A}) - \vec{A}\cdot\nabla\phi
+\end{equation}
+
+Use interpolation above, we have:
+
+\begin{equation}
+    \begin{aligned}
+        \phi_i (\nabla\cdot \vec{A})_i &= 
+            \sum_j \frac{m_j}{\rho_j} \phi_j \vec{A}_j \cdot \nabla W_{ij} -
+            \vec{A}_i\cdot\sum_j \frac{m_j}{\rho_j}  \phi_j \nabla W_{ij}\\
+            &=
+            \sum_j \frac{m_j}{\rho_j} \phi_j (\vec{A}_j-\vec{A}_i) \cdot \nabla W_{ij}\\
+            &=
+            -\sum_j \frac{m_j}{\rho_j} \phi_j \vec{A}_{ij} \cdot \nabla W_{ij}
+    \end{aligned}
+\end{equation}
+\end{frame}
+
+\begin{frame}
+    \frametitle{散度的核函数插值格式}
+    where $\vec{A}_{ij} = \vec{A}_i - \vec{A}_j$. 
+For example, when we calculate $\rho \nabla\cdot\vec{v}$, interpolation above reveals:
+
+\begin{equation}
+    (\rho \nabla\cdot \vec{v})_i = -\sum_j m_j \vec{v}_{ij} \cdot \nabla W_{ij}
+\end{equation}
+
+such interpolation is widely used in SPH method.
+\end{frame}
+
+\begin{frame}
+    \frametitle{拉普拉斯算子的核函数插值格式}
+    Now let's consider a scalar function $A(\vec{r})$ distributed in space $\mathbb{R}^\text{dim}$.
+\begin{equation}
+    \begin{aligned}
+        \nabla^2 A(\vec{r}) &= \int_{\Omega} \nabla^2 A(\vec{r}^\prime) W(\vec{r} - \vec{r}^\prime) \mathrm{d}\vec{r}^\prime \\
+        &= \int_{\Omega} \nabla^2 A(\vec{r}^\prime) W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime \\
+        &= \int_{\partial \Omega} \nabla A(\vec{r}^\prime) \cdot \vec{n} W(\vec{r}^\prime - \vec{r}) \mathrm{d}S^\prime -
+        \int_{\Omega} \nabla A(\vec{r}^\prime) \cdot \nabla W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime\\
+        &= -\int_{\Omega} \nabla A(\vec{r}^\prime) \cdot \nabla W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime\\
+        &= -\int_{\partial \Omega} A(\vec{r}^\prime)\vec{n} \cdot \nabla W(\vec{r}^\prime - \vec{r}) \mathrm{d}S^\prime +
+        \int_{\Omega} A(\vec{r}^\prime) \nabla^2 W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime\\
+        &= \int_{\Omega} A(\vec{r}^\prime) \nabla^2 W(\vec{r} - \vec{r}^\prime) \mathrm{d}\vec{r}^\prime
+    \end{aligned}
+\end{equation}
+\end{frame}
+
+\begin{frame}
+    \frametitle{拉普拉斯算子的核函数插值格式}
+    The same problem with this formula is accuracy. 
+For this part, 
+I consult a large number of references, 
+but each reference has its own way of interpolation.
+
+in 1985, Brookshaw proposed a way based on Taylor expansion:
+
+\begin{equation}
+    (\nabla^2 A)_i = -\sum_{j} \frac{m_j}{\rho_j} A_{ij}\frac{2|\nabla W_{ij}|}{|r_{ij}|}
+\end{equation}
+
+However, after I reading the original paper, I find he only proposed a 1-D case's formula, 
+In Dan Koschier's paper, he directly use the above formula in 3-D case. 
+And in another paper from Price, 2012, he use the following formula:
+
+\begin{equation}
+    (\nabla^2 A)_i = 2\sum_{j} \frac{m_j}{\rho_j} A_{ij}\frac{|\nabla W_{ij}|}{|r_{ij}|}
+\end{equation}
+\end{frame}
+
+\begin{frame}
+    \frametitle{拉普拉斯算子的核函数插值格式}
+
+    My math is not good enough to prove the correctness of this formula. 
+But from my personal formula, I think the following formula is more reasonable:
+
+\begin{equation}
+    \begin{aligned}
+        \nabla^2 A(\vec{r})&= 
+        \int_{\Omega} \nabla A(\vec{r}^\prime) \cdot \nabla W(\vec{r}- \vec{r}^\prime ) \mathrm{d}\vec{r}^\prime\\
+        &\approx
+        \sum_j \frac{m_j}{\rho_j} \frac{A_i-A_j}{|\vec{r}_i-\vec{r}_j|^2}
+        (\vec{r}_i - \vec{r}_j)\cdot \nabla W_{ij}\\
+        &=\sum_j \frac{m_j}{\rho_j}\frac{A_{ij}}{r_{ij}^2}\vec{r}_{ij}\cdot \nabla W_{ij}
+    \end{aligned}
+\end{equation}
+
+From the above formula, $|\nabla W_{ij}|$ shares the same direction with $\vec{r}_{ij}$,
+thus we have:
+
+\begin{equation}
+    \nabla^2 A(\vec{r})\approx
+    \sum_j \frac{m_j}{\rho_j}\frac{A_{ij}}{r_{ij}}|\nabla W_{ij}|
+\end{equation}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{拉普拉斯算子的核函数插值格式}
+
+    this result is quite similar to Price, 2012's formula except for the coefficient '$2$'.
+Currently, I have no idea on why there is a '$2$' in his formula. 
+A possible explanation is that it comes from the Taylor expansion of $W$.
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{向量的拉普拉斯算子的核函数插值格式}
+
+    I copy this from Price, 2012's paper but really have no idea on how to prove it:
+
+\begin{equation}
+    \begin{aligned}
+        (\nabla^2 \vec{A})_i&=-2\sum_j \frac{m_j}{\rho_j}\vec{A}_{ij}\frac{|\nabla W_{ij}|}{r_{ij}}\\
+    \end{aligned}
+\end{equation}
+
+What's more, for a divergence-free vector field $\vec{A}$ (which has $\nabla\cdot\vec{A}=0$), 
+Price proposed a way to calculate $\nabla^2 \vec{A}$:
+
+\begin{equation}
+    (\nabla^2 \vec{A})_i=2(d+2)\sum_{j} 
+    \frac{m_j}{\rho _j} \frac{\vec{A}_{ij}\cdot \vec{r}_{ij}}{r_{ij}^2}\nabla W_{ij}
+\end{equation}
+
+For weak compressible SPH method, this scheme also works.
+
+\end{frame}

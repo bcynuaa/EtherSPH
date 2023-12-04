@@ -1,0 +1,302 @@
+\section{CPP 求解器程序实现进度}
+
+\subsection{弱可压 WCSPH 控制方程}
+
+\begin{frame}
+    This method allows density to vary in space, instead of keeping it constant. 
+This method is widely used in SPH method.
+
+The governing equation is as follows (Lagrange form):
+
+\begin{equation}
+    \begin{aligned}
+        \frac{\mathrm{d} \rho}{\mathrm{d} t} &= -\rho \nabla\cdot \vec{v}\\
+        \frac{\mathrm{d} \vec{v}}{\mathrm{d} t} &= -\frac{1}{\rho}\nabla p + \vec{g} + \nu \nabla^2 \vec{v}\\
+        \frac{\mathrm{d} \vec{r}}{\mathrm{d} t} &= \vec{v}\\
+        \frac{\mathrm{d}p}{\mathrm{d} \rho} &= c^2
+    \end{aligned}
+\end{equation}
+
+WCSPH allows density to vary in space, thus pressure without $p_0$ can be written as:
+
+\begin{equation}
+    p = c^2(\rho - \rho_0)
+\end{equation}
+\end{frame}
+
+\begin{frame}
+    Here for initializing the whole fluid system, 
+we need to calculate the initial pressure $p$ and density $\rho$.
+Usually, pressure obeys the stable hydrostatic equation:
+
+\begin{equation}
+    p = \rho g h+ p_0
+\end{equation}
+
+In calculation, we can set $p_0=0$ for convenience. 
+And density can be calculated from the following equation:
+
+\begin{equation}
+    \rho = \rho_0 + \frac{p}{c^2}
+\end{equation}
+
+For $c$ in water is $1481m/s$, $\Delta\rho$ would be small.
+\end{frame}
+
+\begin{frame}
+    Thus a whole fluid solver is proposed as follows:
+
+\begin{algorithm}[H]
+    \caption{WCSPH Simple Solver}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:} $\rho_0, c, \nu, \vec{g}, \Delta t$ etc.
+        \State \textbf{Output:} $\rho, \vec{v}, p$
+        \State \textbf{Initialize:}:
+        $p = \rho_0 g h, \rho = \rho_0 + \frac{p}{c^2}, \vec{v} = \vec{v}_0$
+        \While{current time step < total time step}
+            \For{each particle $i$}
+                \State Update $\rho$ using $\frac{d\rho}{dt}= -\rho \nabla\cdot \vec{v}$
+            \EndFor
+            \For{each particle $i$}
+                \State Update $\vec{v}$ to $\vec{v}^*$ without pressure using $\frac{d\vec{v}}{dt}= \vec{g} + \nu \nabla^2 \vec{v}$
+            \EndFor
+            \For{each particle $i$}
+                \State Update $p$ using $p = c^2(\rho - \rho_0)$
+            \EndFor
+            \For{each particle $i$}
+                \State Update $\vec{v}$ to $\vec{v}^{n+1}$ with pressure using $\frac{d\vec{v}}{dt}= -\frac{1}{\rho}\nabla p$
+                \State Update $\vec{r}$ using $\frac{d\vec{r}}{dt}= \vec{v}$
+            \EndFor
+        \EndWhile
+    \end{algorithmic}
+\end{algorithm}
+\end{frame}
+
+\subsection{SPH 离散格式}
+
+\begin{frame}
+    \begin{equation}
+        \left(\frac{d\rho}{dt}\right)_i = 
+        \sum_j m_j (\vec{v}_i-\vec{v}_j)\cdot \nabla W_{ij}
+    \end{equation}
+    
+    here we obtain the density of each particle at the next time step:
+    
+    \begin{equation}
+        \rho_i^{n+1} = \rho_i^n + \Delta t \sum_j m_j (\vec{v}_i-\vec{v}_j)\cdot \nabla W_{ij}
+    \end{equation}
+    
+    However, this step ususally needs correction (accoring to SmoothedParticles.jl):
+    
+    \begin{equation}
+        \left(\frac{d\rho}{dt}\right)_i = 
+        \sum_j m_j (\vec{v}_i-\vec{v}_j)\cdot \nabla W_{ij}+
+        2\epsilon_\rho\sum_j m_j (\rho_i-\rho_j)\frac{|\nabla W_{ij}|}{r_{ij}}
+    \end{equation}
+    
+    here $\epsilon_\rho$ is $1\times 10^{-6}$.
+\end{frame}
+
+\begin{frame}
+    \begin{equation}
+        \frac{d\vec{v}}{dt} = -\frac{1}{\rho}\nabla p+\vec{g} + \frac{\mu}{\rho} \nabla^2 \vec{v}
+    \end{equation}
+    
+    Here we use the following formula to calculate $\nabla^2 \vec{v}$:
+    
+    \begin{equation}
+        \nabla^2 \vec{v} = 2(d+2)\sum_j
+        \frac{m_j}{\rho_j}\frac{\vec{v}_{ij}\cdot \vec{r}_{ij}}{r_{ij}^2}\nabla W_{ij}
+    \end{equation}
+    
+    To avoid singularity, we modify the above formula as follows:
+    
+    \begin{equation}
+        \nabla^2 \vec{v} = 2(d+2)\sum_j
+        \frac{m_j}{\rho_j}\frac{\vec{v}_{ij}\cdot \vec{r}_{ij}}{r_{ij}^2+0.01h^2}\nabla W_{ij}
+    \end{equation}
+    
+    Actucally, after reading Price's formula and Koschier's reference and Delong Xu's 
+    form, I'm confused this part has no unified form. I simply apply current formula
+    
+    \begin{equation}
+        \vec{f}_{\text{vis}}=
+        \mu \sum_{j} m_j \frac{2(d+2)}{\rho_i\rho_j}
+        \frac{\vec{v}_{ij}\cdot \vec{r}_{ij}}{r_{ij}^2+0.01h^2}\nabla W_{ij}
+    \end{equation}
+\end{frame}
+
+\begin{frame}
+    \begin{equation}
+        p_i^{n+1} = c^2 \left(
+            \rho_i^{n+1} - \rho_0
+        \right)
+    \end{equation}
+    \begin{equation}
+        \begin{aligned}
+            \vec{f}_{\text{pressure}}=-\frac{1}{\rho}\nabla p &= 
+            -\sum_j m_j \left(
+                \frac{p_j}{\rho_j^2}+\frac{p_i}{\rho_i^2}
+            \right) \nabla W_{ij}\quad (t_{n+1})
+        \end{aligned}
+    \end{equation}
+
+    \begin{equation}
+        \frac{d\vec{v}}{dt} = 
+        \vec{f}_{\text{pressure}}+
+        \vec{f}_{\text{vis}}+
+        \vec{g}
+    \end{equation}
+\end{frame}
+
+\begin{frame}
+    According to Koschier's paper, he proposed a simple boundary handling method.
+
+The boundary particle can be seen as a mirror particle of the real particle, 
+which produces the same force as the real particle but in the opposite direction, 
+especially the pressure force.
+
+\begin{equation}
+    \left(-\frac{1}{\rho}\nabla p\right)_{i}=
+    -\frac{2m_{i}p_i}{\rho_{i}^2}\sum_{j,b}\nabla W_{ij,b}
+\end{equation}
+
+However, this only works for $\rho_i>\rho_0$ and $p_i>0$,  
+otherwise, this should be written as:
+
+\begin{equation}
+    \left(-\frac{1}{\rho}\nabla p\right)_{i}=
+    -m_ip_i\sum_{j,b}\left(
+        \frac{1}{\rho_i^2}+\frac{1}{\rho_0^2}
+    \right)
+    \nabla W_{ij,b}
+\end{equation}
+
+\end{frame}
+
+
+\begin{frame}
+    In summary, 
+I plan to design the SPH code as following procedure:
+
+\begin{algorithm}[H]
+    \caption{WCSPH Simple Solver}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:} $\rho_0, c, \nu, \vec{g}, \Delta t$ etc.
+        \State \textbf{Output:} $\rho, \vec{v}, p$
+        \State \textbf{Initialize:}: $\rho, \vec{v}, p$
+        \While{current time step < total time step}
+            \For{each particle $i$}
+                \State Update $\rho$ using $\frac{d\rho}{dt}= -\rho \nabla\cdot \vec{v}$
+            \EndFor
+            \For{each particle $i$}
+                \State Update $p$ using $p = c^2(\rho - \rho_0)+p_0$
+            \EndFor
+            \For{each particle $i$}
+                \State Update $\vec{v}$ to $\vec{v}^{n+1}$ with pressure using $\frac{d\vec{v}}{dt}= -\frac{1}{\rho}\nabla p+\frac{\mu}{\rho} \nabla^2 \vec{v}+\vec{g}$
+                \State Update $\vec{r}$ using $\frac{d\vec{r}}{dt}= \vec{v}$
+            \EndFor
+        \EndWhile
+    \end{algorithmic}
+\end{algorithm}
+
+\end{frame}
+
+\subsection{开发进度以及模块介绍}
+
+\begin{frame}
+    \begin{block}{已经开发完成的模块}
+        \begin{itemize}
+            \item 基本容器和数组 Container （为编写方便进行了算符重载和封装）
+            \item KernelFucnion 实现了四种常用核函数（包括原函数和导数）
+            \begin{itemize}
+                \item CubicSplineKernel
+                \item GaussianKernel
+                \item WendlandQuinticC2Kernel （SmoothedParticles.jl 选择的核）
+                \item WendlandQuinticC4Kernel
+            \end{itemize}
+            \item Particle 粒子结构体，包含基本属性以及粒子间的相互作用
+            \item ParticleGroup 粒子组，包含该类粒子数组，粒子组间的相互作用
+            \item Solver 求解器，包含粒子组，核函数，时间步长以及 XML 输出
+            \item 一个简单的基于 python 库 pyvista 的后处理可视化程序 
+            （paraview 和 tecplot 的粒子读取似乎有问题）
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}
+    对于 KernelFucnion 而言，其4种核函数的实现如下接口：
+    \begin{itemize}
+        \item \texttt{kernelValue(double r, double h, int dim)} 返回核函数值
+        \item \texttt{kernelValueGradient(double r, double h, int dim)} 返回核函数梯度
+        \item \texttt{kernelValueLaplacian(double r, double h, int dim)} 返回核函数拉普拉斯
+    \end{itemize}
+
+    需要注意的是，这里的 $r$ 是粒子间的距离，$h$ 是核函数的平滑半径，$dim$ 是维度。
+    目前的程序设计结构也可以支持三维。
+\end{frame}
+
+\begin{frame}
+    对于 Particle 而言，其基本属性如下：
+    \begin{itemize}
+        \item \texttt{x\_vec\_} 粒子位置
+        \item \texttt{v\_vec\_} 粒子速度
+        \item \texttt{a\_vec\_} 粒子加速度
+        \item \texttt{rho\_} 粒子密度
+        \item \texttt{drho\_} 粒子密度变化率
+        \item \texttt{p\_} 粒子压强
+        \item \texttt{mass\_} 粒子质量
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    对于 ParticleGroup 而言，其基本属性如下：
+    \begin{itemize}
+        \item \texttt{dim\_} 粒子组维度
+        \item \texttt{n\_particles\_} 粒子组粒子数
+        \item \texttt{particles\_} 粒子组粒子数组
+        \item \texttt{type\_} 粒子组类型
+    \end{itemize}
+
+    这里这样设计的原因是，粒子组可以是不同类型的，比如固体粒子组，流体粒子组等。
+    而如果后期引入刚体组粒子类型，
+    其运动符合刚体运动学方程，而不是流体运动学方程。
+    这需要将每个粒子的受力求和，
+    作用在刚体质心和绕刚体质心的转动惯量上。
+    因此粒子的行为应当是依据其 group 的分类进行的，
+    其符合的方程也需要根据 group 类型进行选择。
+
+\end{frame}
+
+\begin{frame}
+    对于粒子而言定义了两种行为：
+    \begin{itemize}
+        \item \texttt{SelfAction} 粒子自身行为，包括粒子自身的加速度计算
+        \begin{itemize}
+            \item \texttt{updateVelocity} 更新粒子速度
+            \item \texttt{updatePosition} 更新粒子位置
+            \item \texttt{updateDensity} 更新粒子密度
+            \item \texttt{updatePressure} 更新粒子压强
+        \end{itemize}
+        \item \texttt{Interaction} 粒子间相互作用，包括粒子间的相互作用力计算
+        \begin{itemize}
+            \item \texttt{balanceMass} 更新密度变化率
+            \item \texttt{internalForce} 更新流体粒子间相互作用力
+            \item \texttt{wallForce} 更新流体粒子与边界固壁的相互作用力
+        \end{itemize}
+    \end{itemize}
+
+    而Solver 定义了求解器的基本属性，
+    包括时间步长，核函数，粒子组，以及 XML 输出。
+
+\end{frame}
+
+\begin{lstlisting}[language=C++]
+    Particle::balanceMass(this->water_particle_group_, this->h_, this->dim_);
+    Particle::updateDensity(this->water_particle_group_, this->dt_);
+    Particle::updatePressure(this->water_particle_group_, this->dt_);
+    Particle::internalForce(this->water_particle_group_, this->h_, this->dim_);
+    Particle::wallForce(this->water_particle_group_, this->wall_particle_group_, this->h_, this->dim_);
+    Particle::updateVelocity(this->water_particle_group_, this->dt_, this->body_force_vec_);
+    Particle::updatePosition(this->water_particle_group_, this->dt_);
+\end{lstlisting}

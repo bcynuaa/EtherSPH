@@ -1,0 +1,20 @@
+{
+    "autoHeader": {
+        "format": {
+            "startWith": "/**",
+            "middleWith": "*",
+            "endWith": "*/",
+            "headerPrefix": "@",
+        },
+        "header": {
+            "author": "Chenyu Bao | bcynuaa@163.com",
+            "date": {
+                "type": "createTime",
+                "format": "YYYY-MM-DD HH:mm:ss",
+            },
+            "license": "MIT",
+            "cxx standard": "11",
+            "description": "",
+        }
+    }
+}

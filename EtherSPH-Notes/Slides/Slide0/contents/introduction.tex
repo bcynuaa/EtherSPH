@@ -1,0 +1,55 @@
+\section{SPH方法简介}
+
+\subsection{发展历程}
+
+\begin{frame}
+    \begin{itemize}
+		\item 光滑粒子流体动力学（Smoothed Particle Hydrodynamics，SPH）
+		方法是一种基于拉格朗日方法的流体数值模拟方法，
+		由英国物理学家Lucy于1977年首次提出，Gingold和Monaghan于1977年独立提出，
+		1985年Monaghan发表了SPH方法的第一篇综述性论文，SPH方法自此开始快速发展。
+
+		\item 作为一种无网格方法（meshfree）方法，
+		SPH方法并非真的不需要网格，而是求解精度不那么依赖于网格的结构。
+	
+		\item SPH方法通过大量粒子来离散研究对象，
+	    每一个粒子代表该对象中的介质团，粒子之间无直接的网格联系，
+		因此可以有效地避免传统网格方法难以处理的网格畸变问题。
+	
+		\item 最初的SPH方法是用于求解天体物理问题的，后来被应用于流体动力学、
+		固体力学、热力学、电磁学、生物力学、地质力学等。
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	SPH方法更多地还是被应用在水动力学领域
+	（因其数值特性和精度问题，在气动分析中应用受到限制）。
+
+	SPH方法有多种形式，主要有两类形式\cite{_sph_2022}：
+	\begin{itemize}
+		\item 不可压SPH方法（Incompressible SPH，ISPH）
+		\item 弱可压SPH方法（Weakly Compressible SPH，WCSPH），
+		由Monaghan于1994年引入，便于求解压力；
+		而Shadloo等人验证了WCSPH方法在求解低雷诺数时翼型绕流的有效性。
+	\end{itemize}
+
+	相对而言，
+	WCSPH相关理论和方法经过近20年的发展，
+	计算精度已得到 明显提高，
+	相比于ISPH方法，WCSPH方法涉及的GPU存储量更小，
+	计算效率更高，所以更适合于开源程序的设计。
+	DualSPHysics、SPHinXsys等开源程序包都是基于WCSPH理论框架的。
+\end{frame}
+
+\subsection{应用场景}
+
+\begin{frame}
+	SPH常用的应用场景有：
+	\begin{itemize}
+		\item 水下爆炸冲击波传播，如水下爆炸冲击波对船体的冲击；
+		\item 水面波浪传播，如海洋中的海浪、风浪、涌浪等；
+		\item 海岸、河流、湖泊等水体的水动力学过程，如水流泥沙、悬浮物等；
+		\item 固体边界存在大变形的流固耦合问题；
+		\item 生物医学领域，此时会涉及到多相流、多组分流、多物理场耦合等问题；
+	\end{itemize}
+\end{frame}

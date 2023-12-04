@@ -1,0 +1,92 @@
+\documentclass[compress, 10pt]{beamer}
+\usepackage{nuaabeamer}
+
+\usepackage{graphics}
+
+\usepackage{frame}
+\usepackage{pgf}
+\usepackage[UTF8, noindent]{ctex}
+\usepackage{times}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usefonttheme{professionalfonts}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{xcolor}
+\lstset{
+    language=C++,
+    basicstyle=\tt,
+    keywordstyle=\color{purple}\bfseries,
+    identifierstyle=\color{brown!80!black},
+    commentstyle=\color{gray}
+    showstringspaces=false,
+    % tiny font
+    % basicstyle=\tiny,
+    numbers=left,
+    breaklines=true,
+}
+
+\usepackage{caption}
+\setbeamertemplate{caption}[numbered]{}
+
+\usepackage[backend=bibtex,style=ieee,sorting=none]{biblatex}
+% \addbibresource{ref.bib}
+\setbeamerfont{footnote}{size=\tiny}
+
+\usepackage{subfigure}
+
+\makeatletter
+\let\@@magyar@captionfix\relax
+\makeatother
+
+\newcommand{\Title}{SPH方法调研与汇报一}
+\newcommand{\Reporter}{包晨宇}
+\newcommand{\Instructor}{吕宏强}
+\newcommand{\Institute}{南京航空航天大学}
+
+\begin{document}
+
+\captionsetup[figure]{font=footnotesize,labelfont=footnotesize}
+
+\title{\Title}
+\author{汇报人：\Reporter \\ \vspace{1em} 指导人：\Instructor}
+\date{\today}
+\institute{\Institute}
+
+\begin{frame}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.2\textwidth]{logo.pdf}
+    \end{figure}
+    \maketitle
+\end{frame}
+
+\section*{目录}
+\begin{frame}
+    \frametitle{\secname}
+    \tableofcontents[sections={<1-5>}]
+\end{frame}
+
+\AtBeginSection[] {%在每一节前面加入目录显示当前节的目录结构
+	\begin{frame}
+		\frametitle{目录}
+		\tableofcontents[currentsection,currentsubsection,hideothersubsections,sectionstyle=show/shaded,]
+		\addtocounter{framenumber}{-1}  %目录页不计入页码
+	\end{frame}
+}
+
+
+\include{contents/progress_brief.tex}
+\include{contents/formula_progress.tex}
+\include{contents/program_progress.tex}
+\include{contents/example_and_todo.tex}
+% \include{contents/conclusion.tex}
+
+% \section*{参考文献}
+% \begin{frame}[allowframebreaks]
+% 	\frametitle{\secname}
+% 	\printbibliography[heading=none]
+% \end{frame}
+
+\end{document}

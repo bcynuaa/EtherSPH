@@ -1,0 +1,649 @@
+\documentclass[10pt, oneside]{article}
+\usepackage{amsmath, amsthm, amssymb, calrsfs, wasysym, verbatim, bbm, color, graphics, geometry}
+
+\geometry{tmargin=.50in, bmargin=.50in, lmargin=.50in, rmargin = .50in}  
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Cdot}{\boldsymbol{\cdot}}
+
+\newtheorem{theorem}{Theorem} % 定理
+\newtheorem{definition}{Definition} % 定义
+\newtheorem{property}{Property} % 性质
+\newtheorem{convention}{Convention} % 约定
+\newtheorem{remark}{Remark} % 注释
+\newtheorem{lemma}{Lemma} % 引理
+\newtheorem{corollary}{Corollary} % 推论
+
+
+\title{SPH Method}
+\author{bcynuaa}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\vspace{.25in}
+
+\section{Math Basics}
+
+\subsection{Kernal Function}
+
+In SPH method, we use kernal function to approximate $\delta$ function. 
+The kernal function is defined as follows:
+
+\begin{definition}
+    A function $W: \R^d \to \R$ is called a kernal function if it satisfies the following conditions:
+    \begin{enumerate}
+        \item $W$ is a continuous function.
+        \item $W$ is a radially symmetric function, i.e. $W(x) = W(y) \quad \forall |x|=|y|, x, y \in \R^d$.
+        \item $W$ is a positive definite function, i.e. $\int_{\R^d} W(x) dx = 1$.
+    \end{enumerate}
+\end{definition}
+
+\begin{remark}
+    The kernal function is usually chosen as a compactly supported function, i.e. $W(x) = 0$ for $|x| > h$.
+\end{remark}
+
+Kernal functions's formation is not unique. 
+Theses series functions have property as follows:
+
+\begin{property}
+    % 筛选性
+    Screening property.
+    \begin{equation}
+        \int_{\R^d} f(x^\prime)W(x-x^\prime) dx^\prime = f(x)
+    \end{equation}
+\end{property}
+
+\begin{property}
+    % 紧致性
+    Compactness.
+    \begin{equation}
+        W(x)=0 \quad \forall |x| > h
+    \end{equation}
+\end{property}
+
+\begin{property}
+    % 对称性
+    Symmetry.
+    \begin{equation}
+        \begin{aligned}
+            W(x) &= W(-x)\\
+            -\nabla W(x) &= \nabla W(-x)
+        \end{aligned}
+    \end{equation}
+\end{property}
+
+Here $h$ is called the smoothing length. 
+It's a parameter to control the compactness of the kernal function.
+
+\subsection{Particle Approximation}
+
+In SPH method, we use particle approximation to approximate the integral of a function. 
+Let's consider a function $u: \R^d \to \R$ and a point $x \in \R^d$.
+$u(x)$ can be approximated by the following equation:
+
+\begin{equation}
+    u(x) = \int_{\R^d} u(x^\prime) W(x-x^\prime) dx^\prime
+\end{equation}
+
+Consider a particle system $\{x_i\}_{i=1}^N$ in $\R^d$. 
+Particles in this system are distributed all over the space. 
+Each particle has a mass $m_i$ and a density $\rho_i$, 
+and other physical properties such as velocity, pressure, etc. 
+$u$ represents a physical property of the particle system.
+
+Each particle captures a small region of the space. 
+Only particles in this region have significant contribution to the integral.
+Thus we could approximate the integral by summing up the contribution of all particles in the system.
+Consider scalar $u$'s value at particle $x_i$ is $u_i$, 
+then the approximation of $u(x)$ is as follows:
+
+\begin{equation}
+    \begin{aligned}
+        u_i &= \int_{\R^d} u(x^\prime) W(x_i-x^\prime) dx^\prime\\
+        &= \sum_{j=1}^{N} \Delta V_j u_j W(x_i-x_j)
+    \end{aligned}
+\end{equation}
+
+Here $\Delta V_j$ is the volume of particle $x_j$, 
+which can be calculated by $\Delta V_j = m_j / \rho_j$. 
+Denote $W_{ij} = W(x_i-x_j)$, then we have:
+
+\begin{equation}
+    u_i = \sum_{j=1}^{N_i} \frac{m_j}{\rho_j} u_j W_{ij}
+    = \sum_{j=1}^{N_i} \frac{m_j}{\rho_j} u_j W_{ji}
+\end{equation}
+
+Similarly, 
+we can approximate the gradient of $u$ by the following equation:
+
+\begin{equation}
+    \begin{aligned}
+        \nabla u 
+        &= \int_{\R^d} \nabla u(x^\prime) W(x-x^\prime) dx^\prime\\
+        &\mathop{=}^{\text{symmetric}} \int_{\R^d} \nabla u(x^\prime) W(x^\prime-x) dx^\prime\\
+        &=\int_{\partial \Omega} u(x^\prime) \vec{n} W(x^\prime-x) dS^\prime - 
+        \int_{\R^d} u(x^\prime) \nabla W(x^\prime-x) dx^\prime\\
+        &\mathop{=}^\text{compactness}-\int_{\R^d} u(x^\prime) \nabla W(x^\prime-x) dx^\prime
+    \end{aligned}
+\end{equation}
+
+Denote $\nabla u$'s $k$-th component as $u_{,k}$, $\nabla W$'s $k$-th component as $W_{,k}$, 
+then we have:
+
+\begin{equation}
+    u_{i,k} = -\sum_{j=1}^{N_i} \frac{m_j}{\rho_j} u_j W_{ji,k}
+    = \sum_{j=1}^{N_i} \frac{m_j}{\rho_j} u_j W_{ij,k}
+\end{equation}
+
+Here $W_{ji,k}$ is:
+
+\begin{equation}
+    W_{ji,k} = \frac{\partial W(x)}{\partial x_{k}}|_{x=x_j-x_i}
+    =-W_{ij,k}
+\end{equation}
+
+For particular work, Danis proposed a more widely used approximation of gradient:
+
+\begin{equation}
+    \begin{aligned}
+        u_{i,k}&=\frac{1}{\rho_i}\sum_{j=1}^{N_i} m_j (u_j-u_i) W_{ij,k}\\
+        u_{i,k}&=\rho_i \sum_{j=1}^{N_i} m_j
+        \left(
+            \frac{u_i}{\rho_i^2} + \frac{u_j}{\rho_j^2}
+        \right) W_{ij,k}
+    \end{aligned}
+\end{equation}
+
+The detailed formula can be seen in Dan Koschier's paper.
+
+Laplace operator can be approximatedas below:
+
+\begin{equation}
+    \begin{aligned}
+        \nabla^2 u &= \int_{\R^d} \nabla^2 u(x^\prime) W(x-x^\prime) dx^\prime\\
+        &= \int_{\R^d} \nabla \cdot \nabla u(x^\prime) W(x^\prime - x) dx^\prime\\
+        &= \int_{\partial \Omega} \nabla u(x^\prime) \cdot \vec{n} W(x^\prime - x) dS^\prime -
+        \int_{\R^d} \nabla u(x^\prime) \cdot \nabla W(x^\prime - x) dx^\prime\\
+        &\mathop{=}^\text{compactness} -\int_{\R^d} \nabla u(x^\prime) \cdot \nabla W(x^\prime - x) dx^\prime\\
+        &= -\int_{\R^d} u(x^\prime)\vec{n} \cdot \nabla W(x^\prime - x) dx^\prime +
+        \int_{\R^d} u(x^\prime) \nabla \cdot \nabla W(x^\prime - x) dx^\prime\\
+        &\mathop{=}^\text{compactness} \int_{\R^d} u(x^\prime) \nabla^2 W(x - x^\prime) dx^\prime\\
+        &\approx \sum_{j=1}^{N_i} \frac{m_j}{\rho_j} u_j \nabla^2 W_{ij}
+    \end{aligned}
+\end{equation}
+
+However, according to Dan Koschier's paper, 
+this form of approximation is not stable and accurate enough. 
+A imporved discrete Laplacia operator is proesented by Espanol and Revenga: 
+
+\begin{equation}
+    \nabla^2 u  = \sum_{j=1}^{N_i} \frac{2m_j}{\rho_j}
+    (u_j-u_i) \frac{x_{ij}\cdot \nabla W_{ij}}{|x_{ij}|^2 + \eta^2}
+\end{equation}
+
+where $x_{ij} = x_i - x_j$ and $\eta$ is a small positive constant which 
+usually set to be $0.01h$ to prevent singularity.
+
+Now considering a vector function $\vec{v}: \R^d \to \R^d$, 
+we can approximate the divergence of $\vec{v}$ by the following equation:
+
+\begin{equation}
+    \begin{aligned}
+        \nabla \cdot \vec{v} &= \int_{\R^d} \nabla \cdot \vec{v}(x^\prime) W(x-x^\prime) dx^\prime\\
+        &= \int_{\partial \Omega} \vec{v}(x^\prime) \cdot \vec{n} W(x^\prime - x) dS^\prime -
+        \int_{\R^d} \vec{v}(x^\prime) \cdot \nabla W(x^\prime - x) dx^\prime\\
+        &\mathop{=}^\text{compactness} -\int_{\R^d} \vec{v}(x^\prime) \cdot \nabla W(x^\prime - x) dx^\prime\\
+        &= \int_{\R^d} \vec{v}(x^\prime) \cdot \nabla W(x - x^\prime) dx^\prime\\
+    \end{aligned}
+\end{equation}
+
+In particle approximation, we have:
+
+\begin{equation}
+    (\nabla \cdot \vec{v})_i = \sum_{j=1}^{N_i} \frac{m_j}{\rho_j} \vec{v}_j \cdot \nabla W_{ij}
+\end{equation}
+
+\section{Formula of Kernal Function}
+
+Usually, kernal function can be seen as a function of $q$:
+
+\begin{equation}
+    W(q) = W\left(\frac{|\vec{r}|}{h}\right)
+\end{equation}
+
+Where:
+
+\begin{equation}
+    \vec{r} = \vec{x} - \vec{x}^\prime
+\end{equation}
+
+denote that:
+
+\begin{equation}
+    \begin{aligned}
+        \vec{r} = x_j \vec{e}_j \quad r = |\vec{r}|\\
+    \end{aligned}
+\end{equation}
+
+we will have:
+
+\begin{equation}
+    \begin{aligned}
+        \frac{dq}{dr} &= \frac{1}{h}\\
+        \frac{\partial r}{\partial x_j} &= \frac{x_j}{r}\\
+    \end{aligned}
+\end{equation}
+
+\subsection{Gradient of Kernal Function}
+
+With einstein notation, we have:
+
+\begin{equation}
+    \nabla W(\vec{r}, h) = \frac{\partial W(\vec{r},h)}{\partial x_j}\vec{e}_j
+\end{equation}
+
+$\nabla W$'s component is:
+
+\begin{equation}
+    \begin{aligned}
+        \frac{\partial W}{\partial x_j}&=
+        \frac{\mathrm{d} W}{\mathrm{d} q}\frac{\mathrm{d} q}{\mathrm{d} r}\frac{\partial r}{\partial x_j}\\
+        &=\frac{\mathrm{d} W}{\mathrm{d} q}\frac{1}{h}\frac{x_j}{r}\\
+    \end{aligned}
+\end{equation}
+
+Thus we have:
+
+\begin{equation}
+    \nabla W(\vec{r}, h) = W^\prime \frac{1}{h} \frac{\vec{r}}{r}
+\end{equation}
+
+\subsection{Laplacian of Kernal Function}
+
+With einstein notation, we have:
+
+\begin{equation}
+    \nabla^2 W(\vec{r}, h) = \frac{\partial^2 W(\vec{r},h)}{\partial x_j^2}
+\end{equation}
+
+$\nabla^2 W$'s component is:
+
+\begin{equation}
+    \begin{aligned}
+        \frac{\partial^2 W}{\partial x_j^2}&=\frac{\partial}{\partial x_j}
+        \left(
+            \frac{\mathrm{d} W}{\mathrm{d} q}\frac{1}{h}\frac{x_j}{r}
+        \right)\\
+        &=\frac{1}{h}\frac{x_j}{r}\frac{\mathrm{d}^2 W}{\mathrm{d} q^2}\frac{1}{h}\frac{x_j}{r}+
+        \frac{\mathrm{d} W}{\mathrm{d} q}\frac{1}{h}\frac{\partial}{\partial x_j}\left(\frac{x_j}{r}\right)\\
+        &=\frac{1}{h^2}\frac{x_j^2}{r^2}\frac{\mathrm{d}^2 W}{\mathrm{d} q^2}+
+        \frac{\mathrm{d} W}{\mathrm{d} q}\frac{1}{h}\left(\frac{1}{r}-\frac{x_j^2}{r^3}\right)\\
+        &=\frac{1}{h^2}\frac{x_j^2}{r^2}W^{\prime\prime}+
+        W^\prime\frac{1}{h}\frac{r^2-x_j^2}{r^3}\\
+    \end{aligned}
+\end{equation}
+
+Thus we have:
+
+\begin{equation}
+    \begin{aligned}
+        \nabla^2 W(\vec{r}, h) &= \frac{1}{h^2}\frac{\vec{r}\cdot\vec{r}}{r^2}W^{\prime\prime}+
+        W^\prime\frac{1}{h}\frac{\text{dim}r^2-\vec{r}\cdot\vec{r}}{r^3}\\
+        &=\frac{1}{h^2}\frac{r^2}{r^2}W^{\prime\prime}+
+        W^\prime\frac{1}{h}\frac{(\text{dim}-1)r^2}{r^3}\\
+        &=\frac{1}{h^2}W^{\prime\prime}+
+        \frac{(\text{dim}-1)}{hr}W^\prime\\
+    \end{aligned}
+\end{equation}
+
+notice that, when $r\to 0$, for $W^{\prime}\to 0$, we could have an approximation:
+
+\begin{equation}
+    \begin{aligned}
+        \frac{\text{dim}-1}{hr}W^\prime &=
+        \frac{\text{dim}-1}{h^2\frac{r}{h}}W^\prime\\
+        &=\frac{\text{dim}-1}{h^2}\lim_{q\to 0}\frac{W^\prime-0}{q-0}\\
+        &=\frac{\text{dim}-1}{h^2}W^{\prime\prime}
+    \end{aligned}
+\end{equation}
+
+\section{Governing Equations}
+
+\subsection{Brief Explanation on Physical Values}
+
+We divide the total fluid into a set of small mass elements. 
+Considering an element $i$ has a mass $m_i$ and a density $\rho_i$ at position $\vec{r}_i$.
+
+The scalar value $A$ at particle $i$ is $A_i$, let's consider a integral as below:
+
+\begin{equation}
+    \int \frac{A(\vec{r}^\prime)}{\rho(\vec{r}^\prime)}\rho(\vec{r}^\prime)d\vec{r}^\prime
+\end{equation}
+
+the part $\rho(\vec{r}^\prime)d\vec{r}^\prime=dm^\prime$ is the mass of the fluid element, 
+thus we get:
+
+\begin{equation}
+    A_i = \sum_jm_j \frac{A_j}{\rho_j}W_{ij}
+\end{equation}
+
+Suppose $A$ is the density $\rho$, then we have:
+
+\begin{equation}
+    \rho_i = \sum_jm_j \frac{\rho_j}{\rho_j}W_{ij} = \sum_jm_j W_{ij}
+\end{equation}
+
+\subsubsection{First Derivatives}
+
+Although first derivatives can be easily calculated by the formula above, 
+for accuracy and stability, we use the following formula:
+
+Considering a scalar $\phi$, we have:
+
+\begin{equation}
+    \begin{aligned}
+        \frac{\partial (\phi A)}{\partial x_k}&=
+        \phi \frac{\partial A}{\partial x_k} + A \frac{\partial \phi}{\partial x_k}\\
+    \end{aligned}
+\end{equation}
+
+Thus we have:
+
+\begin{equation}
+    \frac{\partial A}{\partial x_k}=\frac{1}{\phi}
+    \left(
+        \frac{\partial (\phi A)}{\partial x_k} - A \frac{\partial \phi}{\partial x_k}
+    \right)
+\end{equation}
+
+Use the integral above, we have:
+
+\begin{equation}
+    \begin{aligned}
+        \left(
+        \frac{\partial A}{\partial x_k}
+    \right)_i &=
+    \frac{1}{\phi_i}
+        \sum_j
+        \left(\frac{m_j}{\rho_j} \phi_j A_j W_{ij,k}
+        - \frac{m_j}{\rho_j} \phi_j A_iW_{ij,k}
+        \right)\\
+        &=\frac{1}{\phi_i}
+        \sum_j
+        \frac{m_j}{\rho_j} \phi_j (A_j-A_i)W_{ij,k}
+    \end{aligned}
+\end{equation}
+
+If $\phi=1$, we have:
+
+\begin{equation}
+    \left(
+        \frac{\partial A}{\partial x_k}
+    \right)_i = \sum_j \frac{m_j}{\rho_j} (A_j-A_i)W_{ij,k}
+\end{equation}
+
+If $\phi=\rho$, we have:
+
+\begin{equation}
+    \left(
+        \frac{\partial A}{\partial x_k}
+    \right)_i = \frac{1}{\rho_i}\sum_j m_j (A_j-A_i)W_{ij,k}
+\end{equation}
+
+this derivation is usually applied in continuity equation to attain $\nabla\cdot \vec{v}$.
+
+\begin{equation}
+    (\nabla\cdot \vec{v})_i = \frac{1}{\rho_i}\sum_j m_j (\vec{v}_j-\vec{v}_i)\cdot \nabla W_{ij}
+\end{equation}
+
+In continuity equation, we have ($\phi=1,\rho$):
+
+\begin{equation}
+    \begin{aligned}
+        \frac{D\rho}{Dt} &= -\rho \nabla \cdot \vec{v}=
+    \rho_i\sum_j \frac{m_j}{\rho_j} (\vec{v}_i-\vec{v}_j)\cdot \nabla W_{ij}\\
+    \frac{D\rho}{Dt} &= 
+    \sum_j m_j (\vec{v}_i-\vec{v}_j)\cdot \nabla W_{ij}\\
+    \end{aligned}
+\end{equation}
+
+\subsubsection{Second Derivatives}
+
+\subsection{Continuity Equation}
+
+\begin{equation}
+    \rho_i = \sum_j m_j W_{ij}
+\end{equation}
+
+or equation:
+
+\begin{equation}
+    \left(\frac{D\rho}{Dt}\right)_i = 
+    \sum_j m_j (\vec{v}_i-\vec{v}_j)\cdot \nabla W_{ij}
+\end{equation}
+
+are both acceptable.
+
+Usually, to avoid accretion of particles, we use modified continuity equation:
+
+\begin{equation}
+    \frac{D\rho}{Dt}=-\rho\nabla\cdot \vec{v}-\vec{f}
+\end{equation}
+
+in particle approximation, we have:
+
+\begin{equation}
+    \frac{D\rho}{Dt}=\sum_j m_j (\vec{v}_i-\vec{v}_j)\cdot \nabla W_{ij}-\sum_j \frac{\vec{f}_j}{\rho_j}W_{ij}
+\end{equation}
+
+\subsection{Thermal Energy Equation}
+
+The equation for the rate of change of thermal energy per unit mass is:
+
+\begin{equation}
+    \frac{D e}{Dt}=-\left(
+        \frac{p}{\rho}
+    \right)\nabla\cdot \vec{v}
+\end{equation}
+
+on one hand:
+
+\begin{equation}
+    \left(\frac{De}{Dt}\right)_i=
+    \left(
+        \frac{p_i}{\rho_i^2}
+    \right)\sum_j
+    m_j(\vec{v}_i-\vec{v}_j)\cdot \nabla W_{ij}
+\end{equation}
+
+on the other hand, noting:
+
+\begin{equation}
+    \frac{De}{Dt} = 
+    -\nabla\cdot\left(
+        \frac{p\vec{v}}{\rho}
+    \right) + \vec{v}\cdot
+    \nabla\left(
+        \frac{p}{\rho}
+    \right)
+\end{equation}
+
+we obtain:
+
+\begin{equation}
+    \left(\frac{De}{Dt}\right)_i=
+    \sum_j m_j
+    \left(
+        \frac{p_j}{\rho_j^2}
+    \right)(\vec{v}_i-\vec{v}_j)\cdot \nabla W_{ij}
+\end{equation}
+
+taken average of the two equations above, we have:
+
+\begin{equation}
+    \left(\frac{De}{Dt}\right)_i=
+    \frac{1}{2}
+    \sum_j m_j
+    \left(
+        \frac{p_j}{\rho_j^2}+\frac{p_i}{\rho_i^2}
+    \right)(\vec{v}_i-\vec{v}_j)\cdot \nabla W_{ij}
+\end{equation}
+
+\subsection{Moving Particles}
+
+usually, we use the following equation to update the position of particles:
+
+\begin{equation}
+    \left(\frac{D\vec{r}}{Dt}\right)_i = \vec{v}_i
+\end{equation}
+
+or XSPH can be applied:
+
+\begin{equation}
+    \begin{aligned}
+        \left(\frac{D\vec{r}}{Dt}\right)_i &= \vec{\hat{v}}_i
+        \\
+        &=\vec{v}_i + \epsilon \sum_j m_j \left(
+            \frac{\vec{v}_{j}-\vec{v}_{i}}{\bar{\rho}_{ij}}W_ij
+        \right)
+    \end{aligned}
+\end{equation}
+
+where $\bar{\rho}_{ij}$ is the average density of particles $i$ and $j$ $(\bar{\rho}_{ij}=\frac{\rho_i+\rho_j}{2})$.
+
+\subsection{Momentum Equation}
+
+Let's consider this vector: $\rho\nabla p$ here:
+
+\begin{equation}
+    (\rho\nabla p)_i = \sum_j
+    m_j(p_j-p_i)\nabla W_{ij}
+\end{equation}
+
+however, it's better to use the following formula:
+
+\begin{equation}
+    \frac{\nabla p}{\rho} = \nabla\left(\frac{p}{\rho}\right) + 
+    \frac{p}{\rho^2}\nabla p
+\end{equation}
+
+thus we have:
+
+\begin{equation}
+    \left(
+        \frac{\nabla p}{\rho}
+    \right)_i = \sum_j
+    m_j\left(
+        \frac{p_j}{\rho_j^2}+\frac{p_i}{\rho_i^2}
+    \right)\nabla W_{ij}
+\end{equation}
+
+% 这边的分部积分运用的实在有点精妙
+
+for non-viscous fluid and non-body force's case, we have momentum equation as below:
+
+\begin{equation}
+    \left(\frac{D \vec{v}}{Dt}\right)_i = -\sum_j
+    m_j\left(
+        \frac{p_j}{\rho_j^2}+\frac{p_i}{\rho_i^2}
+    \right)\nabla W_{ij}
+\end{equation}
+
+\subsection{Viscosity}
+
+modify the equation above we get:
+
+\begin{equation}
+    \left(\frac{D \vec{v}}{Dt}\right)_i = -\sum_j
+    m_j\left(
+        \frac{p_j}{\rho_j^2}+\frac{p_i}{\rho_i^2}
+        +\Pi_{ij}
+    \right)\nabla W_{ij}
+\end{equation}
+
+where $\Pi_{ij}$ is the viscous force between particle $i$ and $j$:
+
+\begin{equation}
+    \Pi_{ij}=
+    \begin{cases}
+        \begin{aligned}
+            &-\alpha \bar{c}_{ij}\mu_{ij}+\beta\mu_{ij}^2\quad (\vec{v}_i-\vec{v}_j)\cdot \vec{r}_{ij}<0\\
+            &0 \quad (\vec{v}_i-\vec{v}_j)\cdot \vec{r}_{ij}\geq 0\\
+        \end{aligned}
+    \end{cases}
+\end{equation}
+
+where:
+
+\begin{equation}
+    \mu_{ij}=\frac{h (\vec{v}_i-\vec{v}_j)\cdot \vec{r}_{ij}}{r_{ij}^2 + \eta^2}
+\end{equation}
+
+usually, $\eta =  0.01h$ to avoid singularity.
+
+and $\bar{c}_{ij}$ is the average sound speed of particle $i$ and $j$.
+
+$\alpha,\beta$ are two constants to control the viscosity.
+
+\begin{itemize}
+    \item $\alpha$: produces a shear and bulk viscosity;
+    \item $\beta$: used to handle high Mach number shocks.
+\end{itemize}
+
+
+\subsection{The Equation I use}
+
+Let's review the basic equations:
+
+\begin{equation}
+    \begin{aligned}
+        \frac{D\rho}{Dt} &= -\rho \nabla \cdot \vec{v}\\
+        \frac{D\vec{v}}{Dt} &= -\frac{\nabla p}{\rho} + \vec{f} + \nu \nabla^2 \vec{v}\\
+        \frac{dp}{d\rho} &= c^2
+    \end{aligned}
+\end{equation}
+
+For continuity equation, we have:
+
+\begin{equation}
+    \left(
+        \frac{D\rho}{Dt}
+    \right)_i = \sum_j m_j (\vec{v}_i-\vec{v}_j)\cdot \nabla W_{ij}
+    +\epsilon_\rho \sum_j m_j \frac{\rho_i-\rho_j}{\bar{\rho}_{ij}}W_{ij}
+\end{equation}
+
+For momentum equation, we have:
+
+\begin{equation}
+    \left(
+        \frac{D\vec{v}}{Dt}
+    \right)_i=
+    -\sum_j m_j \left(
+        \frac{p_j}{\rho_j^2}+\frac{p_i}{\rho_i^2}
+    \right)\nabla W_{ij}
+    +\frac{2\mu}{\rho_0^2}
+    \sum_j m_j (\vec{v}_i-\vec{v}_j)\frac{|\nabla W_{ij}|}{r_{ij}}
+\end{equation}
+
+For incopressible fluid, we have $c=Const$, thus:
+
+\begin{equation}
+    p = c^2(\rho - \rho_0) + p_0
+\end{equation}
+
+\section{TODO list}
+
+\begin{enumerate}
+    \item Background grid to initialize list of particles for reducing the computational cost.
+    \item Physical group to manage the behavior of different particles.
+\end{enumerate}
+
+\end{document}

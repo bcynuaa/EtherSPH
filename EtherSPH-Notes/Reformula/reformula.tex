@@ -1,0 +1,601 @@
+\documentclass[10pt, oneside]{article}
+\usepackage{amsmath, amsthm, amssymb, calrsfs, wasysym, verbatim, bbm, color, graphics, geometry}
+
+\geometry{tmargin=.50in, bmargin=.50in, lmargin=.50in, rmargin = .50in}  
+
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Cdot}{\boldsymbol{\cdot}}
+
+\newtheorem{theorem}{Theorem} % 定理
+\newtheorem{definition}{Definition} % 定义
+\newtheorem{property}{Property} % 性质
+\newtheorem{convention}{Convention} % 约定
+\newtheorem{remark}{Remark} % 注释
+\newtheorem{lemma}{Lemma} % 引理
+\newtheorem{corollary}{Corollary} % 推论
+
+
+\title{SPH Method Reformula}
+\author{bcynuaa}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\vspace{.25in}
+
+\section{Kernel Function}
+
+\subsection{Kernel Function and Its Derivative}
+
+\subsubsection{Kernel Function'e Form}
+
+Usually, 
+kernel function has the form of:
+
+\begin{equation}
+    W(\vec{r})=W\left(
+        \frac{r}{h}
+    \right)=W(q)
+\end{equation}
+
+where:
+
+\begin{equation}
+    \begin{aligned}
+        q &= \frac{r}{h} \quad &\Rightarrow \quad \frac{dq}{dr}= \frac{1}{h}\\
+        r &= \sqrt{\sum_{k=1}^d x_k^2} \quad &\Rightarrow \quad \frac{\partial r}{\partial x_k} = \frac{x_k}{r}\\
+    \end{aligned}
+\end{equation}
+
+\subsubsection{1d Derivative of Kernel Function}
+
+\begin{equation}
+    \begin{aligned}
+        \frac{\partial W}{\partial x_k} &= \frac{\partial W}{\partial q}\frac{\partial q}{\partial x_k}\\
+        &= \frac{\partial W}{\partial q}\frac{\partial q}{\partial r}\frac{\partial r}{\partial x_k}\\
+        &= \frac{\partial W}{\partial q}\frac{1}{h}\frac{x_k}{r}\\
+        &= \frac{1}{h}\frac{x_k}{r}\frac{\partial W}{\partial q}\\
+        &= \frac{1}{h}\frac{x_k}{r}W^\prime
+    \end{aligned}
+\end{equation}
+
+thus it's obvious that:
+
+\begin{equation}
+    \nabla W = \frac{1}{h}\frac{\vec{r}}{r}W^\prime
+\end{equation}
+
+$\nabla W$ shares the same direction with $\vec{r}$, and:
+
+\begin{equation}
+    |\nabla W| = \frac{1}{h}W^\prime
+\end{equation}
+
+\subsubsection{2d Derivative of Kernel Function}
+
+\begin{equation}
+    \begin{aligned}
+        \frac{\partial^2 W}{\partial x_k^2} &= \frac{\partial}{\partial x_k}\left(
+            \frac{1}{h}\frac{x_k}{r}W^\prime
+        \right)\\
+        &= \frac{1}{h}W^\prime \left(
+            \frac{1}{r} - \frac{x_k^2}{r^3}
+        \right)+
+        \frac{1}{h}\frac{x_k}{r}\frac{\partial W^\prime}{\partial x_k}\\
+        &= \frac{1}{h}W^\prime \frac{r^2-x_k^2}{r^3}+
+        \frac{x_k}{hr} \frac{\partial W^\prime}{\partial q}\frac{\partial q}{\partial r}\frac{\partial r}{\partial x_k}\\
+        &= \frac{1}{h}W^\prime \frac{r^2-x_k^2}{r^3}+
+        \frac{x_k}{hr} \frac{\partial W^\prime}{\partial q}\frac{1}{h}\frac{x_k}{r}\\
+        &= \frac{1}{h}W^\prime \frac{r^2-x_k^2}{r^3}+
+        \frac{1}{h^2r^2}x_k^2 W^{\prime\prime}\\
+        &= \frac{1}{h}W^\prime \frac{r^2-x_k^2}{r^3}+
+        \frac{x_k^2}{h^2r^2} W^{\prime\prime}
+    \end{aligned}
+\end{equation}
+
+thus in summary:
+
+\begin{equation}
+    \nabla^2 W = \sum_{k=1}^d \frac{\partial^2 W}{\partial x_k^2} = 
+        \frac{d-1}{hr}W^\prime + \frac{1}{h^2}W^{\prime\prime}
+\end{equation}
+
+when $r\to 0$, we have:
+
+\begin{equation}
+    \nabla^2 W = \lim_{r/h\to 0} \nabla^2 W = \frac{d}{h^2}W^{\prime\prime}
+\end{equation}
+
+\subsection{Kernel Interpolation}
+
+\subsubsection{Original Kernel Interpolation}
+
+From the property shared with $\delta$ function:
+
+\begin{equation}
+    A(\vec{r}) = 
+    \int_{\Omega} A(\vec{r}^\prime) 
+    W(\vec{r} - \vec{r}^\prime) \mathrm{d}\vec{r}^\prime
+\end{equation}
+
+In particle discretization, we have:
+
+\begin{equation}
+    A_i = \sum_{j} \frac{m_j}{\rho_j} A_j W_{ij}
+\end{equation}
+
+where:
+
+\begin{equation}
+    W_{ij} = W(\vec{r}_i - \vec{r}_j)\quad \text{and} 
+    \quad \sum_{j} \frac{m_j}{\rho_j} W_{ij} = 1
+\end{equation}
+
+This provides a way to interpolate the value of $A$ at any point $\vec{r}$.
+
+\subsubsection{Gradient of Kernel Interpolation}
+
+Consider a scalar function $A(\vec{r})$ distributed in space $\mathbb{R}^\text{dim}$. 
+Let's see $\nabla A(\vec{r})$:
+
+\begin{equation}
+    \begin{aligned}
+        \nabla A(\vec{r}) 
+        &= \int_{\Omega} \nabla A(\vec{r}^\prime) W(\vec{r} - \vec{r}^\prime) \mathrm{d}\vec{r}^\prime \\
+        &= \int_{\Omega} \nabla A(\vec{r}^\prime) W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime \\
+        &= \int_{\partial \Omega} A(\vec{r}^\prime) \vec{n} W(\vec{r}^\prime - \vec{r}) \mathrm{d}S^\prime
+        -\int_{\Omega} A(\vec{r}^\prime) \nabla W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime\\
+        &= \int_{\Omega} A(\vec{r}^\prime) \nabla W(\vec{r} - \vec{r}^\prime) \mathrm{d}\vec{r}^\prime
+    \end{aligned}
+\end{equation}
+
+The above formula use property of compactness and symmetry of kernel function. 
+In particle discretization, we have:
+
+\begin{equation}
+    \nabla A_i = \sum_{j} \frac{m_j}{\rho_j} A_j \nabla W_{ij}
+\end{equation}
+
+where:
+
+\begin{equation}
+    \nabla W_{ij} = \nabla W(\vec{r}_i - \vec{r}_j)
+\end{equation}
+
+However, according to 'Smoothed Particle Hydrodynamic' from Monaghan 1992, 
+such form of 1-st derivative interpolation is not accurate enough. 
+He proposed a better way to do such interpolation. 
+Supposing we have a scalar called $\phi$, let's consider $\phi\nabla A$ 's approximation:
+
+\begin{equation}
+    \begin{aligned}
+        \phi\nabla A = \nabla(\phi A) - A\nabla\phi
+    \end{aligned}
+\end{equation}
+
+Use interpolation above, we have:
+
+\begin{equation}
+    \begin{aligned}
+        \phi_i (\nabla A)_i &= 
+            \sum_j \frac{m_j}{\rho_j} \phi_j A_j \nabla W_{ij} -
+            A_i\sum_j \frac{m_j}{\rho_j}  \phi_j \nabla W_{ij}\\
+            &= \sum_j \frac{m_j}{\rho_j} \phi_j( A_j-A_i) \nabla W_{ij}
+    \end{aligned}
+\end{equation}
+
+thus we have:
+
+\begin{equation}
+    (\nabla A)_i = \frac{1}{\phi_i}\sum_j \frac{m_j}{\rho_j} \phi_j( A_j-A_i) \nabla W_{ij} 
+\end{equation}
+
+noting that $A_{ij} = A_i - A_j$, we have:
+
+\begin{equation}
+    (\nabla A)_i = -\frac{1}{\phi_i}\sum_j \frac{m_j}{\rho_j}\phi_j A_{ij} \nabla W_{ij}
+\end{equation}
+
+For example, when we focus on $\frac{1}{\rho}\nabla p$, 
+we have 2 ways to obtain its value:
+
+\begin{equation}
+    \begin{aligned}
+        \phi = 1 \quad &\Rightarrow \quad 
+            (\nabla p)_i = \sum_j \frac{m_j}{\rho_j} (p_j-p_i) \nabla W_{ij} \\
+        \phi_i = \frac{1}{\rho} \quad &\Rightarrow \quad 
+            \frac{1}{\rho}\nabla p = \nabla \left(
+                \frac{p}{\rho}
+            \right)+
+            \frac{p}{\rho^2}\nabla \rho\\
+            &\Rightarrow\quad
+            \left(\frac{\nabla p}{\rho}\right)_i=
+            \sum_j m_j \left(
+                \frac{p_j}{\rho_j^2}+\frac{p_i}{\rho_i^2}
+            \right) \nabla W_{ij}
+    \end{aligned}
+\end{equation}
+
+These 2 ways are the most widely used in SPH method.
+
+\subsubsection{Divergence of Kernel Interpolation}
+
+Now let's consider a vector $\vec{A}$ distributed in space $\mathbb{R}^\text{dim}$.
+Let's see $\nabla\cdot\vec{A}$:
+
+\begin{equation}
+    \begin{aligned}
+        \nabla\cdot\vec{A}(\vec{r}) &= \int_{\Omega} \nabla\cdot\vec{A}(\vec{r}^\prime) W(\vec{r} - \vec{r}^\prime) \mathrm{d}\vec{r}^\prime \\
+        &= \int_{\Omega} \nabla\cdot\vec{A}(\vec{r}^\prime) W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime \\
+        &= \int_{\partial \Omega} \vec{A}(\vec{r}^\prime) \cdot \vec{n} W(\vec{r}^\prime - \vec{r}) \mathrm{d}S^\prime -
+        \int_{\Omega} \vec{A}(\vec{r}^\prime) \cdot \nabla W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime\\
+        &= \int_{\Omega} \vec{A}(\vec{r}^\prime) \cdot \nabla W(\vec{r} - \vec{r}^\prime) \mathrm{d}\vec{r}^\prime
+    \end{aligned}
+\end{equation}
+
+In particle discretization, we have:
+
+\begin{equation}
+    (\nabla\cdot\vec{A})_i = \sum_{j} \frac{m_j}{\rho_j} \vec{A}_j \cdot \nabla W_{ij}
+\end{equation}
+
+where:
+
+\begin{equation}
+    \nabla W_{ij} = \nabla W(\vec{r}_i - \vec{r}_j)
+\end{equation}
+
+However, this way o interpolation is not accurate enough. 
+Let's consider a scalar $\phi$ here:
+
+\begin{equation}
+    \phi \nabla\cdot \vec{A} = \nabla\cdot(\phi \vec{A}) - \vec{A}\cdot\nabla\phi
+\end{equation}
+
+Use interpolation above, we have:
+
+\begin{equation}
+    \begin{aligned}
+        \phi_i (\nabla\cdot \vec{A})_i &= 
+            \sum_j \frac{m_j}{\rho_j} \phi_j \vec{A}_j \cdot \nabla W_{ij} -
+            \vec{A}_i\cdot\sum_j \frac{m_j}{\rho_j}  \phi_j \nabla W_{ij}\\
+            &=
+            \sum_j \frac{m_j}{\rho_j} \phi_j (\vec{A}_j-\vec{A}_i) \cdot \nabla W_{ij}\\
+            &=
+            -\sum_j \frac{m_j}{\rho_j} \phi_j \vec{A}_{ij} \cdot \nabla W_{ij}
+    \end{aligned}
+\end{equation}
+
+where $\vec{A}_{ij} = \vec{A}_i - \vec{A}_j$. 
+For example, when we calculate $\rho \nabla\cdot\vec{v}$, interpolation above reveals:
+
+\begin{equation}
+    (\rho \nabla\cdot \vec{v})_i = -\sum_j m_j \vec{v}_{ij} \cdot \nabla W_{ij}
+\end{equation}
+
+such interpolation is widely used in SPH method.
+
+\subsubsection{Laplacian of Kernel Interpolation}
+
+Now let's consider a scalar function $A(\vec{r})$ distributed in space $\mathbb{R}^\text{dim}$.
+
+\begin{equation}
+    \begin{aligned}
+        \nabla^2 A(\vec{r}) &= \int_{\Omega} \nabla^2 A(\vec{r}^\prime) W(\vec{r} - \vec{r}^\prime) \mathrm{d}\vec{r}^\prime \\
+        &= \int_{\Omega} \nabla^2 A(\vec{r}^\prime) W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime \\
+        &= \int_{\partial \Omega} \nabla A(\vec{r}^\prime) \cdot \vec{n} W(\vec{r}^\prime - \vec{r}) \mathrm{d}S^\prime -
+        \int_{\Omega} \nabla A(\vec{r}^\prime) \cdot \nabla W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime\\
+        &= -\int_{\Omega} \nabla A(\vec{r}^\prime) \cdot \nabla W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime\\
+        &= -\int_{\partial \Omega} A(\vec{r}^\prime)\vec{n} \cdot \nabla W(\vec{r}^\prime - \vec{r}) \mathrm{d}S^\prime +
+        \int_{\Omega} A(\vec{r}^\prime) \nabla^2 W(\vec{r}^\prime - \vec{r}) \mathrm{d}\vec{r}^\prime\\
+        &= \int_{\Omega} A(\vec{r}^\prime) \nabla^2 W(\vec{r} - \vec{r}^\prime) \mathrm{d}\vec{r}^\prime
+    \end{aligned}
+\end{equation}
+
+In particle discretization, we have:
+
+\begin{equation}
+    (\nabla^2 A)_i = \sum_{j} \frac{m_j}{\rho_j} A_j \nabla^2 W_{ij}
+\end{equation}
+
+The same problem with this formula is accuracy. 
+For this part, 
+I consult a large number of references, 
+but each reference has its own way of interpolation.
+
+in 1985, Brookshaw proposed a way based on Taylor expansion:
+
+\begin{equation}
+    (\nabla^2 A)_i = -\sum_{j} \frac{m_j}{\rho_j} A_{ij}\frac{2|\nabla W_{ij}|}{|r_{ij}|}
+\end{equation}
+
+However, after I reading the original paper, I find he only proposed a 1-D case's formula, 
+In Dan Koschier's paper, he directly use the above formula in 3-D case. 
+And in another paper from Price, 2012, he use the following formula:
+
+\begin{equation}
+    (\nabla^2 A)_i = 2\sum_{j} \frac{m_j}{\rho_j} A_{ij}\frac{|\nabla W_{ij}|}{|r_{ij}|}
+\end{equation}
+
+My math is not good enough to prove the correctness of this formula. 
+But from my personal formula, I think the following formula is more reasonable:
+
+\begin{equation}
+    \begin{aligned}
+        \nabla^2 A(\vec{r})&= 
+        \int_{\Omega} \nabla A(\vec{r}^\prime) \cdot \nabla W(\vec{r}- \vec{r}^\prime ) \mathrm{d}\vec{r}^\prime\\
+        &\approx
+        \sum_j \frac{m_j}{\rho_j} \frac{A_i-A_j}{|\vec{r}_i-\vec{r}_j|^2}
+        (\vec{r}_i - \vec{r}_j)\cdot \nabla W_{ij}\\
+        &=\sum_j \frac{m_j}{\rho_j}\frac{A_{ij}}{r_{ij}^2}\vec{r}_{ij}\cdot \nabla W_{ij}
+    \end{aligned}
+\end{equation}
+
+From the above formula, $|\nabla W_{ij}|$ shares the same direction with $\vec{r}_{ij}$,
+thus we have:
+
+\begin{equation}
+    \nabla^2 A(\vec{r})\approx
+    \sum_j \frac{m_j}{\rho_j}\frac{A_{ij}}{r_{ij}}|\nabla W_{ij}|
+\end{equation}
+
+this result is quite similar to Price, 2012's formula except for the coefficient '$2$'.
+Currently, I have no idea on why there is a '$2$' in his formula. 
+A possible explanation is that it comes from the Taylor expansion of $W$.
+
+\subsubsection{Vector Second Derivative of Kernel Interpolation}
+
+I copy this from Price, 2012's paper but really have no idea on how to prove it:
+
+\begin{equation}
+    \begin{aligned}
+        (\nabla^2 \vec{A})_i&=-2\sum_j \frac{m_j}{\rho_j}\vec{A}_{ij}\frac{|\nabla W_{ij}|}{r_{ij}}\\
+    \end{aligned}
+\end{equation}
+
+What's more, for a divergence-free vector field $\vec{A}$ (which has $\nabla\cdot\vec{A}=0$), 
+Price proposed a way to calculate $\nabla^2 \vec{A}$:
+
+\begin{equation}
+    (\nabla^2 \vec{A})_i=2(d+2)\sum_{j} 
+    \frac{m_j}{\rho _j} \frac{\vec{A}_{ij}\cdot \vec{r}_{ij}}{r_{ij}^2}\nabla W_{ij}
+\end{equation}
+
+\section{Governing Equation And Discretization}
+
+\subsection{Weak Compressible SPH And Governing Equation}
+
+This method allows density to vary in space, instead of keeping it constant. 
+This method is widely used in SPH method.
+
+The governing equation is as follows (Lagrange form):
+
+\begin{equation}
+    \begin{aligned}
+        \frac{\mathrm{d} \rho}{\mathrm{d} t} &= -\rho \nabla\cdot \vec{v}\\
+        \frac{\mathrm{d} \vec{v}}{\mathrm{d} t} &= -\frac{1}{\rho}\nabla p + \vec{g} + \nu \nabla^2 \vec{v}\\
+        \frac{\mathrm{d} \vec{r}}{\mathrm{d} t} &= \vec{v}\\
+        \frac{\mathrm{d}p}{\mathrm{d} \rho} &= c^2
+    \end{aligned}
+\end{equation}
+
+WCSPH allows density to vary in space, thus pressure without $p_0$ can be written as:
+
+\begin{equation}
+    p = c^2(\rho - \rho_0)
+\end{equation}
+
+Here for initializing the whole fluid system, 
+we need to calculate the initial pressure $p$ and density $\rho$.
+Usually, pressure obeys the stable hydrostatic equation:
+
+\begin{equation}
+    p = \rho g h+ p_0
+\end{equation}
+
+In calculation, we can set $p_0=0$ for convenience. 
+And density can be calculated from the following equation:
+
+\begin{equation}
+    \rho = \rho_0 + \frac{p}{c^2}
+\end{equation}
+
+For $c$ in water is $1481m/s$, $\Delta\rho$ would be small.
+
+\subsection{A Simple Solver for WCSPH}
+
+Thus a whole fluid solver is proposed as follows:
+
+\begin{algorithm}[H]
+    \caption{WCSPH Simple Solver}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:} $\rho_0, c, \nu, \vec{g}, \Delta t$ etc.
+        \State \textbf{Output:} $\rho, \vec{v}, p$
+        \State \textbf{Initialize:}:
+        \begin{itemize}
+            \item $p = \rho_0 g h$
+            \item $\rho = \rho_0 + \frac{p}{c^2}$
+            \item $\vec{v} = \vec{v}_0$
+        \end{itemize}
+        \While{current time step < total time step}
+            \For{each particle $i$}
+                \State Update $\rho$ using $\frac{d\rho}{dt}= -\rho \nabla\cdot \vec{v}$
+            \EndFor
+            \For{each particle $i$}
+                \State Update $\vec{v}$ to $\vec{v}^*$ without pressure using $\frac{d\vec{v}}{dt}= \vec{g} + \nu \nabla^2 \vec{v}$
+            \EndFor
+            \For{each particle $i$}
+                \State Update $p$ using $p = c^2(\rho - \rho_0)$
+            \EndFor
+            \For{each particle $i$}
+                \State Update $\vec{v}$ to $\vec{v}^{n+1}$ with pressure using $\frac{d\vec{v}}{dt}= -\frac{1}{\rho}\nabla p$
+                \State Update $\vec{r}$ using $\frac{d\vec{r}}{dt}= \vec{v}$
+            \EndFor
+        \EndWhile
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{Discretization of Governing Equation}
+
+\subsubsection{Continuity Discretization}
+
+\begin{equation}
+    \left(\frac{d\rho}{dt}\right)_i = 
+    \sum_j m_j (\vec{v}_i-\vec{v}_j)\cdot \nabla W_{ij}
+\end{equation}
+
+here we obtain the density of each particle at the next time step:
+
+\begin{equation}
+    \rho_i^{n+1} = \rho_i^n + \Delta t \sum_j m_j (\vec{v}_i-\vec{v}_j)\cdot \nabla W_{ij}
+\end{equation}
+
+However, this step ususally needs correction (accoring to SmoothedParticles.jl):
+
+\begin{equation}
+    \left(\frac{d\rho}{dt}\right)_i = 
+    \sum_j m_j (\vec{v}_i-\vec{v}_j)\cdot \nabla W_{ij}+
+    2\epsilon_\rho\sum_j m_j (\rho_i-\rho_j)\frac{|\nabla W_{ij}|}{r_{ij}}
+\end{equation}
+
+here $\epsilon_\rho$ is $1\times 10^{-6}$.
+
+note: I think here can be written as a sparse matrix form to ensure divergence-free.
+
+Wait to be done in future work.
+
+\subsubsection{Motion Equation Discretization Without Pressure}
+
+\begin{equation}
+    \frac{d\vec{v}}{dt} = \vec{g} + \frac{\mu}{\rho} \nabla^2 \vec{v}
+\end{equation}
+
+Here we use the following formula to calculate $\nabla^2 \vec{v}$:
+
+\begin{equation}
+    \nabla^2 \vec{v} = 2(d+2)\sum_j
+    \frac{m_j}{\rho_j}\frac{\vec{v}_{ij}\cdot \vec{r}_{ij}}{r_{ij}^2}\nabla W_{ij}
+\end{equation}
+
+To avoid singularity, we modify the above formula as follows:
+
+\begin{equation}
+    \nabla^2 \vec{v} = 2(d+2)\sum_j
+    \frac{m_j}{\rho_j}\frac{\vec{v}_{ij}\cdot \vec{r}_{ij}}{r_{ij}^2+0.01h^2}\nabla W_{ij}
+\end{equation}
+
+Actucally, after reading Price's formula and Koschier's reference and Delong Xu's 
+form, I'm confused this part has no unified form. I simply apply current formula
+
+\begin{equation}
+    \vec{f}_{\text{vis}}=
+    \mu \sum_{j} m_j \frac{2(d+2)}{\rho_i\rho_j}
+    \frac{\vec{v}_{ij}\cdot \vec{r}_{ij}}{r_{ij}^2+0.01h^2}\nabla W_{ij}
+\end{equation}
+
+\subsubsection{Pressure Discretization}
+
+\begin{equation}
+    p_i^{n+1} = c^2 \left(
+        \rho_i^{n+1} - \rho_0
+    \right)
+\end{equation}
+
+\subsubsection{Motion Equation Discretization With Pressure}
+
+\begin{equation}
+    \left(\frac{d\vec{v}}{dt}\right)_i = -
+    \sum_j m_j \left(
+        \frac{p_i^{n+1}}{\rho_i^{n+1}\rho_i^{n+1}}+\frac{p_j^{n+1}}{\rho_j^{n+1}\rho_j^{n+1}}
+    \right) \nabla W_{ij}
+\end{equation}
+
+Thus we have:
+
+\begin{equation}
+    \vec{v}_i^{n+1} = \vec{v}_i^* + \Delta t 
+        \sum_j m_j \left(
+        \frac{p_i^{n+1}}{\rho_i^{n+1}\rho_i^{n+1}}+\frac{p_j^{n+1}}{\rho_j^{n+1}\rho_j^{n+1}}
+    \right) \nabla W_{ij}
+\end{equation}
+
+Monaghan proposed an artificial viscosity term to avoid particle penetration:
+
+\subsubsection{Position Discretization}
+
+\begin{equation}
+    \vec{r}_i^{n+1} = \vec{r}_i^n + \Delta t \vec{v}_i^{n+1}
+\end{equation}
+
+Actually, here can also be correted by some unreasonable addition such like XSPH method 
+proposed by Monaghan, 
+but I'm not going to use it for current SPH code.
+
+\subsection{The Progress of This My SPH Code}
+
+In summary, 
+I plan to design the SPH code as following procedure:
+
+\begin{algorithm}[H]
+    \caption{WCSPH Simple Solver}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:} $\rho_0, c, \nu, \vec{g}, \Delta t$ etc.
+        \State \textbf{Output:} $\rho, \vec{v}, p$
+        \State \textbf{Initialize:}: $\rho, \vec{v}, p$
+        \While{current time step < total time step}
+            \For{each particle $i$}
+                \State Update $\rho$ using $\frac{d\rho}{dt}= -\rho \nabla\cdot \vec{v}$
+            \EndFor
+            \For{each particle $i$}
+                \State Update $p$ using $p = c^2(\rho - \rho_0)+p_0$
+            \EndFor
+            \For{each particle $i$}
+                \State Update $\vec{v}$ to $\vec{v}^{n+1}$ with pressure using $\frac{d\vec{v}}{dt}= -\frac{1}{\rho}\nabla p+\frac{\mu}{\rho} \nabla^2 \vec{v}+\vec{g}$
+                \State Update $\vec{r}$ using $\frac{d\vec{r}}{dt}= \vec{v}$
+            \EndFor
+        \EndWhile
+    \end{algorithmic}
+\end{algorithm}
+
+However, this procedure is not the same as any other SPH code. 
+The time discretization quite relies on the SPH interpolation form. 
+Different interpolation form will lead to different time discretization, 
+and the code procedure will be different. 
+My current code is based on the above procedure, 
+but I'm not sure whether it's correct or not.
+
+\subsection{Boundary Handling}
+
+According to Koschier's paper, he proposed a simple boundary handling method.
+
+The boundary particle can be seen as a mirror particle of the real particle, 
+which produces the same force as the real particle but in the opposite direction, 
+especially the pressure force.
+
+\begin{equation}
+    \left(-\frac{1}{\rho}\nabla p\right)_{i}=
+    -\frac{2m_{i}p_i}{\rho_{i}^2}\sum_{j,b}\nabla W_{ij,b}
+\end{equation}
+
+However, this only works for $\rho_i>\rho_0$ and $p_i>0$,  
+otherwise, this should be written as:
+
+\begin{equation}
+    \left(-\frac{1}{\rho}\nabla p\right)_{i}=
+    -m_ip_i\sum_{j,b}\left(
+        \frac{1}{\rho_i^2}+\frac{1}{\rho_0^2}
+    \right)
+    \nabla W_{ij,b}
+\end{equation}
+
+\end{document}
