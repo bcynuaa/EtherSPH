@@ -1,9 +1,9 @@
 #=
   @ author: bcynuaa
-  @ date: 2023-11-24 00:32:12
+  @ date: 2023-12-04 20:39:23
   @ description:
  =#
 
-abstract type FixedParticle <: AbstractParticle end
+abstract type FixedParticle <: AbstractParticle end;
 
 include("./WallParticle.jl");

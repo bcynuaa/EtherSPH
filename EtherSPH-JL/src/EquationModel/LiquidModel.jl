@@ -1,36 +1,51 @@
 #=
   @ author: bcynuaa
-  @ date: 2023-11-24 19:35:16
+  @ date: 2023-12-04 21:33:29
   @ description:
  =#
 
-abstract type LiquidModel <: AbstractEquationModel end
+abstract type LiquidModel <: AbstractEquationModel end;
 
-struct WeakCompressibleLiquidModel <: LiquidModel
-    c_0_::Double
-    c_02_::Double
-    rho_0_::Double
-    rho_02_::Double
-    p_0_::Double
-    mu_::Double
-    nu_::Double
-    epsilon_rho_::Double
-    dim_coefficient_::Double # 2*(dim+2)
-    avoid_sigularity_::Double
+abstract type WeaklyCompressibleLiquidModel <: LiquidModel end;
+
+struct XSPHWeaklyCompressibleLiquidModel{
+    RealType <: AbstractFloat, 
+    ArrayType <: AbstractVector{RealType}
+} <: WeaklyCompressibleLiquidModel
+    rho_0_::RealType
+    c_0_::RealType
+    gamma_::RealType
+    b_::RealType # c₀²ρ₀/γ
+    mu_0_::RealType
+    nu_0_::RealType
+    body_force_vec_::ArrayType
+    equal_gravity_::RealType
+    epsilon_xsph_::RealType # modification while moving particles
+    reference_depth_::RealType
+    avoid_singularity_::RealType
 end
 
-function WeakCompressibleLiquidModel(
-  c_0::Double,
-  rho_0::Double,
-  p_0::Double,
-  mu_0::Double,
-  dim::Isize
-)::WeakCompressibleLiquidModel
-    c_02 = c_0 * c_0;
-    rho_02 = rho_0 * rho_0;
-    nu = mu_0 / rho_0;
-    epsilon_rho = 1e-6;
-    dim_coefficient = 2. * (dim + 2);
-    avoid_sigularity = 1e-2;
-    return WeakCompressibleLiquidModel(c_0, c_02, rho_0, rho_02, p_0, mu_0, nu, epsilon_rho, dim_coefficient, avoid_sigularity);
+function XSPHWeaklyCompressibleLiquidModel(
+    rho_0::RealType,
+    c_0::RealType,
+    gamma::RealType,
+    mu_0::RealType,
+    body_force_vec::ArrayType,
+    reference_depth::RealType
+)::XSPHWeaklyCompressibleLiquidModel where {
+    RealType <: AbstractFloat, 
+    ArrayType <: AbstractVector{RealType}
+}
+    b::RealType = c_0^2 * rho_0 / gamma;
+    nu_0::RealType = mu_0 / rho_0;
+    equal_gravity::RealType = norm(body_force_vec);
+    epsilon_xsph::RealType = 0.5;
+    avoid_singularity::RealType = 1e-2;
+    return XSPHWeaklyCompressibleLiquidModel{RealType, ArrayType}(
+        rho_0, c_0, gamma, b, 
+        mu_0, nu_0, 
+        body_force_vec, equal_gravity,
+        epsilon_xsph, reference_depth, 
+        avoid_singularity
+    );
 end

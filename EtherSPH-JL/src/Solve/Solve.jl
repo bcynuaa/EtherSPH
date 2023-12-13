@@ -1,58 +1,73 @@
 #=
   @ author: bcynuaa
-  @ date: 2023-11-28 20:11:59
+  @ date: 2023-12-06 19:20:56
   @ description:
  =#
 
+using ProgressBars;
+
 function eachStep!(
-    particle_pool::ParticlePool,
-    body_force_vec::AbstractVector,
-    kernel::AbstractKernel,
-    wc_liquid_model::WeakCompressibleLiquidModel,
-    forward_euler::ForwardEuler
+    fluid_particles::FluidParticlesType where FluidParticlesType <: AbstractVector{<:FluidParticle},
+    wall_particles::WallParticlesType where WallParticlesType <: AbstractVector{<:WallParticle},
+    smooth_kernel::SmoothKernelType where SmoothKernelType <: SmoothKernel,
+    xsph_wc_lm::XSPHWeaklyCompressibleLiquidModel,
+    dr_forward_euler::DensityReinitializedForwardEuler,
+    step::IntType where IntType <: Integer
 )::Nothing
-    particle_neighbours = findNeighbours(particle_pool, kernel);
-    # balance mass
-    for neighbour in particle_neighbours
-        balanceMass!(particle_pool.particles_[neighbour.i_], particle_pool.particles_[neighbour.j_], neighbour, wc_liquid_model);
+    f_neighbours = findNeighbours(fluid_particles, smooth_kernel);
+    f_w_neighbours = findNeighbours(fluid_particles, wall_particles, smooth_kernel);
+    Threads.@threads for neighbour in f_neighbours
+        continuity!(fluid_particles[neighbour.i_], fluid_particles[neighbour.j_], neighbour, xsph_wc_lm);
     end
-    # update density and pressure
-    for particle in particle_pool.particles_
-        updateDensity!(particle, forward_euler.dt_);
-        updatePressure!(particle, wc_liquid_model);
+    Threads.@threads for i_f_particle in eachindex(fluid_particles)
+        updateDensity!(fluid_particles[i_f_particle], dr_forward_euler.dt_);
+        updatePressure!(fluid_particles[i_f_particle], xsph_wc_lm);
     end
-    # pressure force and viscosity force
-    for neighbour in particle_neighbours
-        pressureForce!(particle_pool.particles_[neighbour.i_], particle_pool.particles_[neighbour.j_], neighbour, wc_liquid_model);
-        viscosityForce!(particle_pool.particles_[neighbour.i_], particle_pool.particles_[neighbour.j_], neighbour, kernel, wc_liquid_model);
+    Threads.@threads for neighbour in f_neighbours
+        pressureForce!(fluid_particles[neighbour.i_], fluid_particles[neighbour.j_], neighbour);
+        viscosityForce!(fluid_particles[neighbour.i_], fluid_particles[neighbour.j_], neighbour, smooth_kernel, xsph_wc_lm);
     end
-    # update velocity and position
-    for particle in particle_pool.particles_
-        updateVelocity!(particle, forward_euler.dt_, body_force_vec);
-        updatePosition!(particle, forward_euler.dt_);
+    Threads.@threads for neighbour in f_w_neighbours
+        wallForce!(fluid_particles[neighbour.i_], wall_particles[neighbour.j_], neighbour, smooth_kernel, xsph_wc_lm);
     end
+    Threads.@threads for i_f_particle in eachindex(fluid_particles)
+        updateVelocity!(fluid_particles[i_f_particle], dr_forward_euler.dt_, xsph_wc_lm.body_force_vec_);
+        updatePosition!(fluid_particles[i_f_particle], dr_forward_euler.dt_);
+    end
+    Threads.@threads for neighbour in f_neighbours
+        positionCorrection!(fluid_particles[neighbour.i_], fluid_particles[neighbour.j_], dr_forward_euler.dt_, neighbour, xsph_wc_lm);
+    end
+    # Threads.@threads for neighbour in f_w_neighbours
+    #     positionCorrection!(fluid_particles[neighbour.i_], dr_forward_euler.dt_, neighbour, xsph_wc_lm);
+    # end
+    if isDensityReinitializedStep(step, dr_forward_euler)
+        reconstructScalar!(fluid_particles, :rho_, f_neighbours, smooth_kernel);
+    end
+    f_neighbours = nothing;
+    f_w_neighbours = nothing;
     return nothing;
 end
 
 function solve!(
-    particle_pool::ParticlePool,
-    body_force_vec::AbstractVector,
-    kernel::AbstractKernel,
-    wc_liquid_model::WeakCompressibleLiquidModel,
-    forward_euler::ForwardEuler,
+    particles_list::ParticlesListType where ParticlesListType <: AbstractVector{<:AbstractVector},
+    smooth_kernel::SmoothKernelType where SmoothKernelType <: SmoothKernel,
+    xsph_wc_lm::XSPHWeaklyCompressibleLiquidModel,
+    dr_forward_euler::DensityReinitializedForwardEuler,
     vtp_io::VTPIO
 )::Nothing
-    # assure dir path exist
     assureDirPathExist(vtp_io);
-    # write initial state
-    writeVtp(particle_pool, 0, vtp_io);
-    # start time loop
-    for step in ProgressBar(1: forward_euler.total_step_)
-        # each step
-        eachStep!(particle_pool, body_force_vec, kernel, wc_liquid_model, forward_euler);
-        # write vtp file
-        if isStepForOutput(forward_euler, step)
-            writeVtp(particle_pool, div(step, forward_euler.output_step_), vtp_io);
+    writeVTP(0, 0., vtp_io, particles_list);
+    for step in ProgressBar(1: dr_forward_euler.total_step_)
+        try
+            eachStep!(particles_list[1], particles_list[2], smooth_kernel, xsph_wc_lm, dr_forward_euler, step);
+        catch e
+            println(e);
+            println("step: ", step);
+            writeVTP(step, step * dr_forward_euler.dt_, vtp_io, particles_list);
+            break;
+        end
+        if isOutputStep(step, dr_forward_euler)
+            writeVTP(div(step, dr_forward_euler.output_step_), step * dr_forward_euler.dt_, vtp_io, particles_list);
         end
     end
     return nothing;

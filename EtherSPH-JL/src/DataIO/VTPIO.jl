@@ -1,19 +1,22 @@
 #=
   @ author: bcynuaa
-  @ date: 2023-11-28 15:01:47
+  @ date: 2023-12-06 16:54:33
   @ description:
  =#
 
-# * use LightXML to write particles to vtp file
-
 struct VTPIO <: AbstractDataIO
-    step_digit_::Isize
+    step_digit_::IntType where IntType<:Integer
     file_name_::String
     file_suffix_::String
     dir_path_::String
+    field_symbols_::FieldSymbolsType where FieldSymbolsType <: AbstractVector{Symbol}
+    field_names_::FieldNamesType where FieldNamesType <: AbstractVector{String}
 end
 
-function vtpFileNameAtStep(step::Isize, vtp_io::VTPIO)::String
+function vtpFileNameAtStep(
+    step::IntType where IntType<:Integer,
+    vtp_io::VTPIO
+)::String
     return joinpath(
         vtp_io.dir_path_,
         string(
@@ -24,47 +27,63 @@ function vtpFileNameAtStep(step::Isize, vtp_io::VTPIO)::String
     );
 end
 
-function writeVtp(
-    particle_pool::ParticlePool,
-    step::Isize,
-    vtp_io::VTPIO
-)::Nothing
-    dim::Isize = length(particle_pool.particles_[1].x_vec_);
-    float_type::DataType = typeof(particle_pool.particles_[1].x_vec_[1]);
-    # get data from particle pool by different particle type
-    points::AbstractArray{float_type} = zeros(float_type, dim, length(particle_pool.particles_));
-    velocitys::AbstractArray{float_type} = zeros(float_type, dim, length(particle_pool.particles_));
-    rhos::AbstractArray{float_type} = zeros(float_type, length(particle_pool.particles_));
-    pressures::AbstractArray{float_type} = zeros(float_type, length(particle_pool.particles_));
-    current_type_first_index::Isize = 1;
-    for particle_type in keys(particle_pool.type_index_dict_)
-        n_particles = length(particle_pool.type_index_dict_[particle_type]);
-        particle_index = particle_pool.type_index_dict_[particle_type]
-        if particle_type <: FixedParticle
-            for i = 1: n_particles
-                points[:, current_type_first_index + i - 1] = particle_pool.particles_[particle_index[i]].x_vec_;
+function getParticleFields(
+    field_symbols::FieldSymbolsType where FieldSymbolsType <: AbstractVector{Symbol},
+    particle::ParticleArrayType where ParticleArrayType <: AbstractVector{<:AbstractParticle}
+)
+    field_number = length(field_symbols);
+    particle_number = length(particle);
+    fields = zeros(field_number, particle_number);
+    particle_field_symbols = fieldnames(eltype(particle));
+    for i_field in eachindex(field_symbols)
+        if field_symbols[i_field] in particle_field_symbols
+            fields[i_field, :] = [getfield(particle[i_particle], field_symbols[i_field]) for i_particle in eachindex(particle)];
+        else
+            fields[i_field, :] .= NaN;
+        end
+    end
+    return fields;
+end
+
+function writeVTP(
+    step::IntType,
+    t::RealType,
+    vtp_io::VTPIO,
+    particles_list::ParticlesListType where ParticlesListType <: AbstractVector{<:AbstractVector}
+)::Nothing where {IntType <: Integer, RealType <: AbstractFloat}
+    dim::IntType = length(particles_list[1][1].x_vec_);
+    n_particles_list = [length(particles) for particles in particles_list];
+    n_particles::IntType = sum(n_particles_list);
+    points = zeros(RealType, dim, n_particles);
+    velocitys = zeros(RealType, dim, n_particles);
+    fields = zeros(RealType, length(vtp_io.field_symbols_), n_particles);
+    current_point_index::IntType = 1;
+    for particles in particles_list
+        particle_number = length(particles);
+        fields[:, current_point_index: current_point_index + particle_number - 1] = getParticleFields(vtp_io.field_symbols_, particles);
+        if eltype(particles) <: MovableParticle
+            for i_particle in eachindex(particles)
+                points[:, current_point_index + i_particle - 1] = particles[i_particle].x_vec_;
+                velocitys[:, current_point_index + i_particle - 1] = particles[i_particle].v_vec_;
             end
-            # other property set as NaN
-            velocitys[:, current_type_first_index:current_type_first_index + n_particles - 1] .= NaN;
-            rhos[current_type_first_index:current_type_first_index + n_particles - 1] .= NaN;
-            pressures[current_type_first_index:current_type_first_index + n_particles - 1] .= NaN;
-        elseif particle_type <: MovableParticle
-            for i = 1: n_particles
-                points[:, current_type_first_index + i - 1] = particle_pool.particles_[particle_index[i]].x_vec_;
-                velocitys[:, current_type_first_index + i - 1] = particle_pool.particles_[particle_index[i]].v_vec_;
-                rhos[current_type_first_index + i - 1] = particle_pool.particles_[particle_index[i]].rho_;
-                pressures[current_type_first_index + i - 1] = particle_pool.particles_[particle_index[i]].p_;
+        else
+            for i_particle in eachindex(particles)
+                points[:, current_point_index + i_particle - 1] = particles[i_particle].x_vec_;
+                velocitys[:, current_point_index + i_particle - 1] .= NaN;
             end
         end
-        current_type_first_index += n_particles;
+        current_point_index += particle_number;
     end
-    # write to vtp file
     vtp_file_name::String = vtpFileNameAtStep(step, vtp_io);
-    cells = [MeshCell(PolyData.Verts(), [i]) for i in 1: length(particle_pool.particles_)];
+    cells = [MeshCell(PolyData.Verts(), [i]) for i in 1: n_particles];
     vtk_file = vtk_grid(vtp_file_name, points, cells);
+    vtk_file["Step"] = step;
+    vtk_file["Time"] = t;
+    vtk_file["WallTime"] = Dates.format(Dates.now(), wall_time_format);
     vtk_file["Velocity"] = velocitys;
-    vtk_file["Density"] = rhos;
-    vtk_file["Pressure"] = pressures;
+    for i_field in eachindex(vtp_io.field_symbols_)
+        vtk_file[vtp_io.field_names_[i_field]] = fields[i_field, :];
+    end
     vtk_save(vtk_file);
     return nothing;
 end

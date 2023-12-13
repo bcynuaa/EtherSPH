@@ -40,3 +40,6 @@
 */.VSCodeCounter
 */bin/
 */lib/
+
+# animation files
+*.mp4

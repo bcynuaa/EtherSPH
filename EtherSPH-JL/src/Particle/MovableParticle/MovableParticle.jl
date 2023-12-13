@@ -1,9 +1,9 @@
 #=
   @ author: bcynuaa
-  @ date: 2023-11-24 00:31:29
+  @ date: 2023-12-04 20:39:11
   @ description:
  =#
 
-abstract type MovableParticle <: AbstractParticle end
+abstract type MovableParticle <: AbstractParticle end;
 
 include("./FluidParticle.jl");
