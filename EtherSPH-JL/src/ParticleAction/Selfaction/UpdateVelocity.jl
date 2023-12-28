@@ -5,20 +5,19 @@
  =#
 
 function updateVelocity!(
-    p::ParticleType where ParticleType <: FluidParticle,
+    particle::ParticleType where ParticleType <: FluidParticle,
     dt::RealType where RealType <: AbstractFloat
 )::Nothing
-    p.v_vec_ .+= p.dv_vec_ .* dt;
-    p.dv_vec_ .= 0.;
+    particle.v_vec_ .+= particle.dv_vec_ .* dt;
     return nothing;
 end
 
 function updateVelocity!(
-    p::ParticleType where ParticleType <: MovableParticle,
+    particle::ParticleType where ParticleType <: MovableParticle,
     dt::RealType,
     body_force_vec::ArrayType where ArrayType <: AbstractVector{<:RealType}
 )::Nothing where RealType <: AbstractFloat
-    p.dv_vec_ .+= body_force_vec;
-    updateVelocity!(p, dt);
+    particle.dv_vec_ .+= body_force_vec;
+    updateVelocity!(particle, dt);
     return nothing;
 end

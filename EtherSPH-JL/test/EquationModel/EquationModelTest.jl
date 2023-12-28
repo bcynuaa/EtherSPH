@@ -12,5 +12,5 @@ c_0 = 1500.;
 gamma = 7.;
 mu_0 = 8.9e-4;
 body_force_vec = [0., -9.81];
-xsph_wc_lm = XSPHWeaklyCompressibleLiquidModel(rho_0, c_0, gamma, mu_0, body_force_vec);
-@code_warntype XSPHWeaklyCompressibleLiquidModel(rho_0, c_0, gamma, mu_0, body_force_vec);
+xsph_wc_lm = CommonWeaklyCompressibleLiquidModel(rho_0, c_0, gamma, mu_0, body_force_vec);
+@code_warntype CommonWeaklyCompressibleLiquidModel(rho_0, c_0, gamma, mu_0, body_force_vec);

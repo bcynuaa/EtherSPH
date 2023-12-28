@@ -8,4 +8,4 @@ include("./Continuity.jl");
 include("./PressureForce.jl");
 include("./ViscosityForce.jl");
 include("./WallForce.jl");
-include("./PositionCorrection.jl");
+include("./KernelCorrection.jl");

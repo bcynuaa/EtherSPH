@@ -14,5 +14,6 @@
             },
             "description": "",
         }
-    }
+    },
+    "julia.environmentPath": "/home/bcynuaa/Project/EtherSPH/EtherSPH-JL"
 }

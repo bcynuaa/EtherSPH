@@ -1,48 +1,53 @@
 #=
   @ author: bcynuaa
-  @ date: 2023-12-26 23:44:49
+  @ date: 2023-12-25 18:49:46
   @ description:
  =#
 
+# M.A. Cruchaga
+
 include("../../src/EtherSPH.jl");
 
-const dim = 2;
-const water_width = 1.;
-const water_height = 2.;
-const dr = 1e-2;
+const water_width = 0.114;
+const water_height = 0.114;
+const dr = 0.001;
 const gap = dr;
+const fluid_row_number = water_height / dr |> round |> Int;
+const fluid_col_number = water_width / dr |> round |> Int;
+const dim = 2;
 const influence_radius = 3. * dr;
 
-smooth_kernel = SmoothKernel(influence_radius, dim, CubicSplineKernel);
+smooth_kernel = SmoothKernel(influence_radius, dim, WendlandC2Kernel);
 
-const box_width = 4.;
-const box_height = 3.;
+const box_width = 0.42;
+const box_height = 0.44;
 
-const gravity = 9.8;
+const gravity = 9.81;
 const g_vec = [0., -gravity];
 const rho_0 = 1000.;
-const c_0 = 120.;
+const c_0 = 10.;
 const gamma = 7.;
 const mu_0 = 1e-3;
 wc_lm = CommonWeaklyCompressibleLiquidModel(rho_0, c_0, gamma, mu_0, g_vec);
 
-const dt = 5e-5;
-const total_time = 3.;
+const dt = 0.1 * smooth_kernel.influence_radius_ / c_0;
+const total_time = 1.;
 const total_step = total_time / dt |> round |> Int;
 const output_step = 100;
-const density_reinitialized_step = 5;
+const density_reinitialized_step = 30;
 dr_forward_euler = DensityReinitializedForwardEuler(dt, total_step, output_step, density_reinitialized_step);
 
 const step_digit = div(total_step, output_step) |> Int |> string |> length;
-const file_name = "collapse_dry";
+const file_name = "cruchaga";
 const file_suffix = ".vtp";
-const dir_path = "./CollapseDryData/";
+const dir_path = "./CruchagaData/";
 const fileld_symbols = [:rho_, :p_, :c_];
 const fileld_names = ["Density", "Pressure", "SoundSpeed"];
 vtp_io = VTPIO(step_digit, file_name, file_suffix, dir_path, fileld_symbols, fileld_names);
 
 const x0 = 0.;
 const y0 = 0.;
+const fluid_number = fluid_row_number * fluid_col_number;
 
 function createRectangleParticles(particle_type, dx, x_0, y_0, width_number, height_number)
     particles = [particle_type(2) for i in 1: width_number * height_number];
@@ -53,13 +58,9 @@ function createRectangleParticles(particle_type, dx, x_0, y_0, width_number, hei
     return particles;
 end
 
-const fluid_row_number = water_height / dr |> round |> Int;
-const fluid_col_number = water_width / dr |> round |> Int;
-const fluid_number = fluid_row_number * fluid_col_number;
-
 fluid_particles = createRectangleParticles(LiquidParticle, dr, x0, y0, fluid_col_number, fluid_row_number);
 for index in eachindex(fluid_particles)
-    fluid_particles[index].p_ = rho_0 * gravity * (water_height + dr - fluid_particles[index].x_vec_[2]);
+    fluid_particles[index].p_ = rho_0 * gravity * (box_height - fluid_particles[index].x_vec_[2]);
     fluid_particles[index].rho_ = (fluid_particles[index].p_ / wc_lm.b_ + 1.)^(1. / gamma) * rho_0;
     # fluid_particles[index].rho_ = rho_0;
     updatePressure!(fluid_particles[index], wc_lm);
@@ -107,6 +108,18 @@ for index in eachindex(right_wall_particles)
     right_wall_particles[index].gap_ = dr;
 end
 
+top_wall_particles = createRectangleParticles(
+    WallParticle, dr,
+    x0,
+    y0 + box_height,
+    wall_box_width_number,
+    wall_thick_number
+);
+for index in eachindex(top_wall_particles)
+    top_wall_particles[index].normal_vec_ = [0., -1.];
+    top_wall_particles[index].gap_ = dr;
+end
+
 left_bottom_corner_particles = createRectangleParticles(
     WallParticle, dr,
     x0 - wall_thick_number * dr,
@@ -131,17 +144,37 @@ for index in eachindex(right_bottom_corner_particles)
     right_bottom_corner_particles[index].gap_ = dr;
 end
 
-wall_particles = vcat(bottom_wall_particles, left_wall_particles, right_wall_particles, left_bottom_corner_particles, right_bottom_corner_particles);
-
-function check(particle::LiquidParticle)::Bool
-    if particle.x_vec_[1] > x0 + box_width
-        return false;
-    elseif particle.x_vec_[2] > y0 + box_height * 1.0
-        return false;
-    else
-        return true;
-    end
+left_top_corner_particles = createRectangleParticles(
+    WallParticle, dr,
+    x0 - wall_thick_number * dr,
+    y0 + box_height,
+    wall_thick_number,
+    wall_thick_number
+);
+for index in eachindex(left_top_corner_particles)
+    left_top_corner_particles[index].normal_vec_ = [1., -1.] ./ sqrt(2.);
+    left_top_corner_particles[index].gap_ = dr;
 end
 
-main() = @inbounds @fastmath solve!(fluid_particles, wall_particles, smooth_kernel, 
-    wc_lm, dr_forward_euler, vtp_io, check);
+right_top_corner_particles = createRectangleParticles(
+    WallParticle, dr,
+    x0 + box_width,
+    y0 + box_height,
+    wall_thick_number,
+    wall_thick_number
+);
+for index in eachindex(right_top_corner_particles)
+    right_top_corner_particles[index].normal_vec_ = [-1., -1.] ./ sqrt(2.);
+    right_top_corner_particles[index].gap_ = dr;
+end
+
+wall_particles = vcat(
+    bottom_wall_particles, left_wall_particles, right_wall_particles, top_wall_particles,
+    left_bottom_corner_particles, right_bottom_corner_particles,
+    left_top_corner_particles, right_top_corner_particles
+);
+
+check(particle::AbstractParticle)::Bool = true;
+
+main() = solve!(fluid_particles, wall_particles, smooth_kernel, 
+wc_lm, dr_forward_euler, vtp_io, check);

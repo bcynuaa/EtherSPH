@@ -1,0 +1,31 @@
+\section{Examples}
+
+\subsection{Collapse onto Dry Bottom}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \draw[-] (0,6)--(0,0)--(8,0)--(8,6);
+        \draw[-] (0,6)--(-0.4,6)--(-0.4,-0.4)--(8.4,-0.4)--(8.4,6)--(8,6);
+        \draw[-] (0,4)--(2,4)--(2,0);
+        
+        % arbitrary fluid surface at some time
+        \draw (0,2.5) .. controls (1,2.3) and (1.5,2.0) .. (2,1.8) .. controls (3.5,1.3) and (4,0.7) .. (5,0.3) .. controls (5.5,0.2) .. (6,0);
+        
+        \node at (1,0.3) {$a$};
+        \node at (4, -0.2) {$4a$};
+        \node at (-0.7, 2.5) {$2a$};
+        \node at (8.7, 3.5) {$3a$};
+
+        \node at (5, 6.3) {Collapse onto Dry Bottom, after Koshizuka and Oka (1996)};
+        \node at (5, 5.5) {$\rho_0=1000kg/m^3$};
+        \node at (5, 5) {$c_0=120m/s$};
+        \node at (5, 4.5) {$\nu_0=10^{-6}m^2/s$};
+        \node at (5, 4) {$a=1m$};
+        \node at (5, 3.5) {$g=9.8m/s^2$};
+        \node at (5, 3) {$\delta r=0.01m\quad h=1.5\delta r$};
+        \node at (5, 2.5) {fluid particle: $100\times 200$};
+        \node at (5, 2) {boundary particle: $3\times 400,300$};
+        \node at (5, 1.5) {$\Delta t=5\times10^{-5}s\quad 3s$};
+    \end{tikzpicture}
+\end{figure}
