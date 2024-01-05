@@ -14,6 +14,7 @@ struct CommonWeaklyCompressibleLiquidModel{
 } <: WeaklyCompressibleLiquidModel
     rho_0_::RealType
     c_0_::RealType
+    p_0_::RealType # background pressure
     gamma_::RealType
     b_::RealType # c₀²ρ₀/γ
     mu_0_::RealType
@@ -24,6 +25,7 @@ end
 function CommonWeaklyCompressibleLiquidModel(
     rho_0::RealType,
     c_0::RealType,
+    p_0::RealType,
     gamma::RealType,
     mu_0::RealType,
     body_force_vec::ArrayType
@@ -34,7 +36,7 @@ function CommonWeaklyCompressibleLiquidModel(
     b::RealType = c_0^2 * rho_0 / gamma;
     nu_0::RealType = mu_0 / rho_0;
     return CommonWeaklyCompressibleLiquidModel{RealType, ArrayType}(
-        rho_0, c_0, gamma, b, 
+        rho_0, c_0, p_0, gamma, b, 
         mu_0, nu_0, 
         body_force_vec
     );

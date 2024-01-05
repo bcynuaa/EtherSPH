@@ -6,7 +6,7 @@
 
 function wallForce!(
     p_i::ParticleType where ParticleType <: FluidParticle,
-    p_j::WallParticle,
+    p_j::WallParticleType where WallParticleType <: FixedParticle,
     neighbour::NeighbourType where NeighbourType <: AbstractNeighbour,
     smooth_kernel::SmoothKernelType where SmoothKernelType <: SmoothKernel
 )::Nothing

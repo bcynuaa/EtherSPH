@@ -66,6 +66,11 @@ function writeVTP(
                 points[:, current_point_index + i_particle - 1] = particles[i_particle].x_vec_;
                 velocitys[:, current_point_index + i_particle - 1] = particles[i_particle].v_vec_;
             end
+        elseif eltype(particles) <: VelocityParticle
+            for i_particle in eachindex(particles)
+                points[:, current_point_index + i_particle - 1] = particles[i_particle].x_vec_;
+                velocitys[:, current_point_index + i_particle - 1] = particles[i_particle].v_vec_;
+            end
         else
             for i_particle in eachindex(particles)
                 points[:, current_point_index + i_particle - 1] = particles[i_particle].x_vec_;

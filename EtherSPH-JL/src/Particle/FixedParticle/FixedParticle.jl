@@ -7,3 +7,4 @@
 abstract type FixedParticle <: AbstractParticle end;
 
 include("./WallParticle.jl");
+include("./VelocityParticle.jl");

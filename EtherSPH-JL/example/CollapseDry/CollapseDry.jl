@@ -22,9 +22,10 @@ const gravity = 9.8;
 const g_vec = [0., -gravity];
 const rho_0 = 1000.;
 const c_0 = 120.;
+const p_0 = 0.;
 const gamma = 7.;
 const mu_0 = 1e-3;
-wc_lm = CommonWeaklyCompressibleLiquidModel(rho_0, c_0, gamma, mu_0, g_vec);
+wc_lm = CommonWeaklyCompressibleLiquidModel(rho_0, c_0, p_0, gamma, mu_0, g_vec);
 
 const dt = 5e-5;
 const total_time = 3.;

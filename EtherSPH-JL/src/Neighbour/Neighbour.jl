@@ -36,6 +36,13 @@ function relativeVelocityVector(
     return p_i.v_vec_;
 end
 
+function relativeVelocityVector(
+    p_i::ParticleType1 where ParticleType1 <: MovableParticle,
+    p_j::VelocityParticle
+)::typeof(p_i.x_vec_)
+    return p_i.v_vec_ .- p_j.v_vec_;
+end
+
 function CommonNeighbour(
     neighbour::Tuple{IntType, IntType, RealType},
     p_i::ParticleType1 where ParticleType1 <: AbstractParticle,

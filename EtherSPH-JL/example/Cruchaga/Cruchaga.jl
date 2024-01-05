@@ -10,7 +10,7 @@ include("../../src/EtherSPH.jl");
 
 const water_width = 0.114;
 const water_height = 0.114;
-const dr = 0.001;
+const dr = 0.002;
 const gap = dr;
 const fluid_row_number = water_height / dr |> round |> Int;
 const fluid_col_number = water_width / dr |> round |> Int;
@@ -26,15 +26,16 @@ const gravity = 9.81;
 const g_vec = [0., -gravity];
 const rho_0 = 1000.;
 const c_0 = 10.;
+const p_0 = 0.;
 const gamma = 7.;
 const mu_0 = 1e-3;
-wc_lm = CommonWeaklyCompressibleLiquidModel(rho_0, c_0, gamma, mu_0, g_vec);
+wc_lm = CommonWeaklyCompressibleLiquidModel(rho_0, c_0, p_0, gamma, mu_0, g_vec);
 
 const dt = 0.1 * smooth_kernel.influence_radius_ / c_0;
 const total_time = 1.;
 const total_step = total_time / dt |> round |> Int;
 const output_step = 100;
-const density_reinitialized_step = 30;
+const density_reinitialized_step = 5;
 dr_forward_euler = DensityReinitializedForwardEuler(dt, total_step, output_step, density_reinitialized_step);
 
 const step_digit = div(total_step, output_step) |> Int |> string |> length;
@@ -176,5 +177,5 @@ wall_particles = vcat(
 
 check(particle::AbstractParticle)::Bool = true;
 
-main() = solve!(fluid_particles, wall_particles, smooth_kernel, 
+main() = @inbounds @fastmath solve!(fluid_particles, wall_particles, smooth_kernel, 
 wc_lm, dr_forward_euler, vtp_io, check);

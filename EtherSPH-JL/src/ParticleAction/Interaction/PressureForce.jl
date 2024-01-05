@@ -23,3 +23,19 @@ function pressureForce!(
     end
     return nothing;
 end
+
+function pressureForce!(
+    p_i::ParticleType,
+    neighbour::NeighbourType where NeighbourType <: AbstractNeighbour,
+    smooth_kernel::SmoothKernelType where SmoothKernelType <: SmoothKernel,
+    wc_lm::WeaklyCompressibleLiquidModelType where WeaklyCompressibleLiquidModelType <: WeaklyCompressibleLiquidModel
+)::Nothing where ParticleType <: MovableParticle
+    p_rho2::typeof(p_i.p_) = p_i.p_ / p_i.rho_^2 + wc_lm.p_0_ / wc_lm.rho_0_^2;
+    # p_rho2 += abs(p_rho2) * 0.01 * neighbour.kernel_value_ / kernelValue(p_i.gap_, smooth_kernel);
+    pressure_force_vec::typeof(p_i.x_vec_) = -p_rho2 * neighbour.kernel_gradient_vec_;
+    dv_vec_i::typeof(p_i.x_vec_) = p_i.mass_ * pressure_force_vec;
+    lock(p_i.lock_) do
+        p_i.dv_vec_ .+= dv_vec_i;
+    end
+    return nothing;
+end
