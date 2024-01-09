@@ -8,7 +8,7 @@
 
 include("../../src/EtherSPH.jl");
 
-const reynolds_number = 400.;
+const reynolds_number = 200.;
 
 const lid_length = 1.;
 const lid_velocity = 1.;
@@ -18,7 +18,7 @@ const c_0 = 10. * lid_velocity;
 const p_0 = 0.;
 const gamma = 7.;
 
-const dr = 0.01;
+const dr = 0.02;
 const gap = dr;
 const influence_radius = 3. * dr;
 const dim = 2;
