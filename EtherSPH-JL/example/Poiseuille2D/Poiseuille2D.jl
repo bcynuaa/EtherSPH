@@ -13,7 +13,7 @@ const pipe_diameter = 0.01;
 const pipe_length = pipe_ratio * pipe_diameter;
 
 const influence_ratio = 3;
-const dr = pipe_diameter / 80;
+const dr = pipe_diameter / 50;
 const influence_radius = dr * influence_ratio;
 const dim = 2;
 

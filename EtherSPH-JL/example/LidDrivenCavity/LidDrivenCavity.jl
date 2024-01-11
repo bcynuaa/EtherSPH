@@ -8,7 +8,7 @@
 
 include("../../src/EtherSPH.jl");
 
-const reynolds_number = 200.;
+const reynolds_number = 100.;
 
 const lid_length = 1.;
 const lid_velocity = 1.;

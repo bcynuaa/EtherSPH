@@ -39,10 +39,10 @@ const box_thick_number = 3;
 const gravity = 9.81;
 const g_vec = [0., -gravity, 0.];
 const rho_0 = 1e3;
-const c_0 = 10.;
+const c_0 = 15.;
 const p_0 = 0.;
 const gamma = 7.;
-const mu_0 = 1e-3;
+const mu_0 = 8.;
 wc_lm = CommonWeaklyCompressibleLiquidModel(rho_0, c_0, p_0, gamma, mu_0, g_vec);
 
 const dt = 0.1 * smooth_kernel.influence_radius_ / c_0;

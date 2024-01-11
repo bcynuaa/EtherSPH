@@ -1,0 +1,105 @@
+\section{其他技术的讨论}
+
+\subsection{XSPH 方法}
+
+\begin{frame}
+    在之前的程序中，
+    XSPH 方法被采用：
+    \begin{equation}
+        \frac{\mathrm{d}\vec{r}_i}{\mathrm{d}t}=
+        \vec{v}_i-
+        \epsilon\sum_j
+        \frac{m_j}{\rho_j}
+        \vec{v}_{ij}W_{ij}
+    \end{equation}
+    但该方法仅限于层流求解，
+    并不适用于开放水体的求解。
+    比如流体回注入水槽的时候，
+    若采用 XSPH 会导致平稳水面被注入流体破坏，
+    甚至很容易产生异常负压区，进而发生数值不稳定。
+
+
+    但是对于泊肃叶流和顶盖驱动流类似算例，
+    采用 XSPH 方法确实可以得到较好的结果。
+\end{frame}
+
+\subsection{$\delta^+$ SPH 密度修正器}
+
+\begin{frame}
+
+$\delta^+$ SPH 密度修正器可以有效地稳定密度场，进而稳定压力场。
+
+\begin{equation}
+    \left(
+        \frac{\partial \rho}{\partial t}
+    \right)_i
+    =
+    \sum_j m_j \vec{u}_{ij} \cdot \nabla W_{ij}
+    +
+    h c_0 \delta
+    \sum_j  \frac{m_j}{\rho_j} \vec{D}_{ij}\cdot \nabla W_{ij}
+\end{equation}
+$\vec{D}_{ij}$ 计算如下。 首先提出一个核修正矩函数：
+$[L]_i$ ：
+\begin{equation}
+    [L]_i = \left[\sum_j \frac{m_j}{\rho_j}\vec{r}_{ij}\nabla W_{ij}\right]^{-1}
+\end{equation}
+$[L]_i$ 是一个 $d\times d$ 的矩阵，$d$ 为维度。
+粒子致密时等价于单位阵。
+进而提出修正的密度梯度 $\nabla \rho_i^L$ ：
+\begin{equation}
+    \nabla \rho_i^L = \sum_j \frac{m_j}{\rho_j}\rho_{ij}
+    [L]_i \cdot \nabla W_{ij}
+\end{equation}
+最后由 $\vec{D}_{ij}$ 给出：
+\begin{equation}
+    \vec{D}_{ij} = 
+    \left[
+        2\rho_{ij} - 
+        \left(
+            \nabla \rho_i^L + \nabla \rho_j^L
+        \right)\cdot \vec{r}_{ij}
+    \right]
+    \frac{\vec{r}_{ij}}{r_{ij}^2 + 0.01h^2}
+\end{equation}
+\end{frame}
+
+\begin{frame}
+    $\delta$ 是一个无量纲参数，通常被设定为 $0.1$.
+Monaghan 提出了一个修正器，可以有效地稳定密度场，进而稳定压力场。
+
+$\delta^+$ SPH 模型有时甚至可以在弱可压（WCSPH）情形下给出比不可压（ICSPH）更好的结果。
+
+
+我也在程序中实现了该修正器，
+但不幸的是这个修正器对于计算量的增加是非常大的，
+大约二位情形下会有 $6$ 倍的计算消耗提升，
+这也可能是 SPH 方法不利用速度一阶导计算速度二阶导的原因（会涉及到两次邻域插值过程，对计算消耗很大）。
+
+\begin{equation}
+    \rho_i = \frac{\sum_j m_j W_{ij}}{\sum_j \frac{m_j}{\rho_j}W_{ij}}
+\end{equation}
+
+相对而言，频繁地使用上述核函数修正来稳定密度场可能从效果来看更好，
+在实践中
+$\delta^+$ 似乎学术意义大于其实际价值。
+\end{frame}
+
+\subsection{未来的工作安排}
+
+\begin{frame}
+    预计未来的工作计划：
+    \begin{itemize}
+        \item 打算上并行，在思考 CUDA 或者 MPI 的改版程序，现在的计算效率问题很大；
+        \item 对于不同问题考虑不同的壁面摩擦，而不是用统一的壁面粘性模型，甚至可以自己提出一种壁面模型；
+        \item 考虑不同的问题，比如传热等，物料或者多相流问题等。
+        \item ...
+    \end{itemize}
+    *目前个人最想做的是改一个更强的并行版，现在的线程并行虽然有一定的效率，
+    但遇到三维的大规模粒子计算还是捉襟见肘。
+    
+    *另外我觉得 Cruchaga 给的实验结果是非常好的算例比较，
+    只要提出的壁面模型能和其实验值吻合，
+    那么就能说明摩擦模型的可行性，
+    进而用于更多的问题。
+\end{frame}

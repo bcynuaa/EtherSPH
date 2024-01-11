@@ -29,7 +29,8 @@
     Threads.@threads for neighbour in f_w_neighbours
         wallForce!(fluid_particles[neighbour.i_], velocity_particles[neighbour.j_], neighbour, smooth_kernel);
         pressureForce!(fluid_particles[neighbour.i_], neighbour, smooth_kernel, wc_lm);
-        viscosityForce!(fluid_particles[neighbour.i_], neighbour, smooth_kernel, wc_lm);
+        # viscosityForce!(fluid_particles[neighbour.i_], neighbour, smooth_kernel, wc_lm);
+        viscosityForce!(fluid_particles[neighbour.i_], velocity_particles[neighbour.j_], neighbour, smooth_kernel, wc_lm);
     end
     Threads.@threads for i_f_particle in eachindex(fluid_particles)
         updateVelocity!(fluid_particles[i_f_particle], dr_forward_euler.dt_, wc_lm.body_force_vec_);

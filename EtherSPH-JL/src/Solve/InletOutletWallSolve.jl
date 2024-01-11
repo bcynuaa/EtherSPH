@@ -44,8 +44,8 @@ function eachStep!(
     end
     Threads.@threads for neighbour in all_f_w_neighbours
         wallForce!(all_f_particles[neighbour.i_], wall_particles[neighbour.j_], neighbour, smooth_kernel);
-        viscosityForce!(all_f_particles[neighbour.i_], neighbour, smooth_kernel, wc_lm);
-        # viscosityForce!(all_f_particles[neighbour.i_], wall_particles[neighbour.j_], neighbour, smooth_kernel, wc_lm);
+        # viscosityForce!(all_f_particles[neighbour.i_], neighbour, smooth_kernel, wc_lm);
+        viscosityForce!(all_f_particles[neighbour.i_], wall_particles[neighbour.j_], neighbour, smooth_kernel, wc_lm);
         pressureForce!(all_f_particles[neighbour.i_], neighbour, smooth_kernel, wc_lm);
     end
     # * update fluid particles

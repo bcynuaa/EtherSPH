@@ -374,6 +374,67 @@ For laplacian of $\vec{v}$,
 the formula is much more complicated, 
 of which the form will be given by detailed description in SPH method section.
 
+\subsubsection{Laplacian of Kernel Interpolation}
+
+\textcolor{red}{New: 2024.01.09:} 
+Laplacian of kernel interpolation is derived as below.
+First we consider a tensor $[\tau]$:
+\begin{equation}
+    (\nabla\cdot[\tau])_i = \sum_j \frac{m_j}{\rho_j} \nabla W_{ij}
+    \cdot [\tau]_j
+\end{equation}
+
+Now, let's consider a Taylor expansion of vector $\vec{v}$ around particle $i$:
+\begin{equation}
+    \vec{v}_i \approx
+    \vec{v}_j + (\vec{r}_i - \vec{r}_j)\cdot \nabla\vec{v}_j
+    \to
+    \vec{v}_{ij} \approx \vec{r}_{ij}\cdot \nabla\vec{v}_j
+\end{equation}
+where $\vec{v}_j$ is a tensor (2D as example):
+\begin{equation}
+    \nabla\vec{v}_j =
+    \begin{bmatrix}
+        \frac{\partial v_{j,x}}{\partial x} & \frac{\partial v_{j,y}}{\partial x} \\
+        \frac{\partial v_{j,x}}{\partial y} & \frac{\partial v_{j,y}}{\partial y} 
+    \end{bmatrix}
+\end{equation}
+
+Thus, we have:
+\begin{equation}
+    \begin{aligned}
+        \nabla^2\vec{v}_i &= [\nabla\cdot (\nabla\vec{v})]_i\\
+        &\approx \sum_j \frac{m_j}{\rho_j} \nabla W_{ij}
+        \cdot \nabla\vec{v}_j\\
+    \end{aligned}
+\end{equation}
+
+For $\nabla W_{ij} = \frac{\vec{r}_{ij}}{r_{ij}}\frac{1}{h}W^\prime_{ij}$:
+\begin{equation}
+    \vec{r}_{ij}\cdot W_{ij} = \frac{r_{ij}}{h}W^\prime_{ij}
+\end{equation}
+
+we will have:
+\begin{equation}
+    \begin{aligned}
+        \nabla^2\vec{v}_i &= 
+    \sum_j \frac{m_j}{\rho_j} \frac{1}{h r_{ij}}W^\prime_{ij}
+    (\vec{r}_{ij} \cdot \nabla\vec{v}_j)\\
+    &=
+    \sum_j \frac{m_j}{\rho_j} \frac{1}{h r_{ij}}W^\prime_{ij}\vec{v}_{ij}\\
+    &=
+    \sum_j \frac{m_j}{\rho_j} \frac{1}{r_{ij}^2} \frac{r_{ij}}{h}W^\prime_{ij}\vec{v}_{ij}\\
+    &=
+    \sum_j \frac{m_j}{\rho_j} \frac{\vec{r}_{ij}\cdot \nabla W_{ij}}{r_{ij}^2} \vec{v}_{ij}\\
+    \end{aligned}
+\end{equation}
+to avoid singularity, 
+we add an extra term to such formula:
+\begin{equation}
+    \nabla^2\vec{v}_i = 
+    \sum_j \frac{m_j}{\rho_j} \frac{\vec{r}_{ij}\cdot \nabla W_{ij}}{r_{ij}^2+0.01h^2} \vec{v}_{ij}
+\end{equation}
+
 \subsection{Frequently-used Kernel Functions}
 
 \subsubsection{Cubic Spline Kernel Function}

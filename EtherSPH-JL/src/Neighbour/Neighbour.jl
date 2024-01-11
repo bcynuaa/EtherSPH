@@ -91,3 +91,15 @@ function findNeighbours(
                 [p.x_vec_ for p in particles1], [p.x_vec_ for p in particles2], 
                     smooth_kernel.influence_radius_)];
 end
+
+function findNeighbours(
+    particles1::ParticleArrayType1 where ParticleArrayType1 <: AbstractVector{<:AbstractParticle},
+    particles2::ParticleArrayType2 where ParticleArrayType2 <: AbstractVector{<:FixedParticle},
+    smooth_kernel::SmoothKernelType where SmoothKernelType <: SmoothKernel
+)::AbstractVector{<:AbstractNeighbour}
+    return [CommonNeighbour(
+        neighbour, particles1[neighbour[1]], particles2[neighbour[2]], smooth_kernel)
+        for neighbour in neighborlist(
+                [p.x_vec_ for p in particles1], [p.x_vec_ for p in particles2], 
+                    smooth_kernel.influence_radius_ + 0.5*particles2[1].gap_)];
+end
