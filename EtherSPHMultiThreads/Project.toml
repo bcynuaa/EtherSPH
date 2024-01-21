@@ -1,0 +1,16 @@
+name = "EtherSPHMultiThreads"
+uuid = "3e8977a6-af26-41f4-be9a-86c29aa6af17"
+authors = ["bcynuaa <bcynuaa@163.com>"]
+version = "0.1.0"
+
+[deps]
+CellListMap = "69e1c6dd-3888-40e6-b3c8-31ac5f578864"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+ExportAll = "ad2082ca-a69e-11e9-38fa-e96309a31fe4"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+OhMyREPL = "5fb14364-9ced-5910-84b2-373655c76a03"
+ProgressBars = "49802e3a-d2f1-5c88-81d8-b72133a6f568"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+TypeTree = "04da0e3b-1cad-4b2c-a963-fc1602baf1af"
+WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
