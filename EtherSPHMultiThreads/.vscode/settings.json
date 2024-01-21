@@ -1,0 +1,20 @@
+{
+    "autoHeader": {
+        "format": {
+            "startWith": "#=",
+            "middleWith": "",
+            "endWith": "=#",
+            "headerPrefix": "@",
+        },
+        "header": {
+            "author": "bcynuaa",
+            "date": {
+                "type": "createTime",
+                "format": "YYYY-MM-DD HH:mm:ss",
+            },
+            "description": "",
+        }
+    },
+    // julia env 1.9。4
+    "julia.executablePath": "~/miniconda3/envs/py11ju19/bin/julia"
+}
