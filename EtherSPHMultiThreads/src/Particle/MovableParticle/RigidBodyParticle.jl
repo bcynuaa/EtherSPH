@@ -30,7 +30,7 @@ function RigidBodyParticleMTh(RealType::DataType, dim::IntType)::RigidBodyPartic
     );
 end
 
-abstract type RigidBody end;
+abstract type AbstractRigidBody end;
 
 mutable struct RigidBody2D{
     RealType <: AbstractFloat, 
@@ -108,6 +108,8 @@ function rigidBodyMotion!(
         tau_vec = [-r_vec[2], r_vec[1]];
         particle.v_vec_ .= rigid_body_2d.v_vec_ .+ rigid_body_2d.omega_ * tau_vec;
         particle.x_vec_ .+= particle.v_vec_ * dt;
+        d_theta = rigid_body_2d.omega_ * dt;
+        particle.normal_vec_ = [cos(d_theta) -sin(d_theta); sin(d_theta) cos(d_theta)] * particle.normal_vec_;
     end
     rigid_body_2d.x_vec_ .+= rigid_body_2d.v_vec_ * dt;
     return nothing;

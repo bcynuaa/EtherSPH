@@ -8,3 +8,4 @@ using ProgressBars;
 
 include("FluidWallSolve.jl");
 include("FluidVelocitySolve.jl");
+include("FluidWallRigidBodySolve.jl");
