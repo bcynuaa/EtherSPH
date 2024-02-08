@@ -11,31 +11,30 @@ MTH -> Multi-Thread
 mutable struct LiquidParticleMTh{
     RealType <: AbstractFloat, 
     ArrayType <: AbstractVector{RealType}, 
-    MatrixType <: AbstractMatrix{RealType}
+    AtomArrayType <: AbstractVector{Base.Threads.Atomic{RealType}},
 } <: LiquidParticle
     x_vec_::ArrayType
     v_vec_::ArrayType
-    dv_vec_::MatrixType
+    dv_vec_::AtomArrayType
     rho_::RealType
-    drho_::ArrayType
+    drho_::Base.Threads.Atomic{RealType}
     p_::RealType
     c_::RealType
     mass_::RealType
     gap_::RealType
-    sum_kernel_weight_::ArrayType
-    sum_weighted_scalar_::ArrayType
-    sum_weighted_vector_::MatrixType
+    sum_kernel_weight_::Base.Threads.Atomic{RealType}
+    sum_weighted_scalar_::Base.Threads.Atomic{RealType}
+    sum_weighted_vector_::AtomArrayType
 end
 
 function LiquidParticleMTh(RealType::DataType, dim::IntType)::LiquidParticleMTh where IntType <: Integer
-    n_threads::IntType = Threads.nthreads();
     x_vec = zeros(RealType, dim);
     v_vec = zeros(RealType, dim);
-    dv_vec = zeros(RealType, dim, n_threads);
-    drho = zeros(RealType, n_threads);
-    sum_kernel_weight = zeros(RealType, n_threads);
-    sum_weighted_scalar = zeros(RealType, n_threads);
-    sum_weighted_vector = zeros(RealType, dim, n_threads);
+    dv_vec = [Base.Threads.Atomic{RealType}(0.) for i in 1: dim];
+    drho = Base.Threads.Atomic{RealType}(0.);
+    sum_kernel_weight = Base.Threads.Atomic{RealType}(0.);
+    sum_weighted_scalar = Base.Threads.Atomic{RealType}(0.);
+    sum_weighted_vector = [Base.Threads.Atomic{RealType}(0.) for i in 1: dim];
     rho::RealType = 0.;
     p::RealType = 0.;
     c::RealType = 0.;

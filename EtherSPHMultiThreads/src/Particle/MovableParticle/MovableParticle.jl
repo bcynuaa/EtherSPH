@@ -9,3 +9,6 @@ abstract type MovableParticle <: AbstractParticle end;
 abstract type FluidParticle <: MovableParticle end;
 abstract type LiquidParticle <: FluidParticle end; include("./LiquidParticle.jl");
 abstract type GasParticle <: FluidParticle end;
+
+abstract type SolidParticle <: MovableParticle end;
+abstract type RigidBodyParticle <: SolidParticle end; include("./RigidBodyParticle.jl");

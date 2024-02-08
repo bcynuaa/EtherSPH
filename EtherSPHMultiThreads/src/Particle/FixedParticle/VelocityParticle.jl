@@ -15,6 +15,7 @@ mutable struct ConstVelocityParticle{
 end
 
 function ConstVelocityParticle(RealType::DataType, dim::IntType)::ConstVelocityParticle where IntType <: Integer
+    ArrayType::DataType = typeof(zeros(RealType, dim));
     x_vec_::ArrayType = zeros(RealType, dim);
     v_vec_::ArrayType = zeros(RealType, dim);
     normal_vec_::ArrayType = zeros(RealType, dim);

@@ -8,8 +8,7 @@
     p::ParticleType where ParticleType <: FluidParticle,
     dt::RealType where RealType <: AbstractFloat
 )::Nothing
-    p.drho_[1] = sum(p.drho_);
-    p.rho_ += p.drho_[1] * dt;
-    fill!(p.drho_, 0.);
+    p.rho_ += p.drho_[] * dt;
+    p.drho_[] = 0.;
     return nothing;
 end

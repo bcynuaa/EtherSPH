@@ -7,3 +7,4 @@
 using ProgressBars;
 
 include("FluidWallSolve.jl");
+include("FluidVelocitySolve.jl");

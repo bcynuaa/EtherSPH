@@ -4,12 +4,13 @@
   @ description:
  =#
 
- function updateVelocity!(
+function updateVelocity!(
     particle::ParticleType where ParticleType <: FluidParticle,
     dt::RealType where RealType <: AbstractFloat
 )::Nothing
-    particle.dv_vec_[:, 1] = sum(particle.dv_vec_, dims=2);
-    particle.v_vec_ .+= particle.dv_vec_[:, 1] * dt;
+    for i_dim in eachindex(particle.v_vec_)
+        particle.v_vec_[i_dim] += particle.dv_vec_[i_dim][] * dt;
+    end
     return nothing;
 end
 
@@ -18,7 +19,9 @@ function updateVelocity!(
     dt::RealType,
     body_force_vec::ArrayType where ArrayType <: AbstractVector{<:RealType}
 )::Nothing where RealType <: AbstractFloat
-    particle.dv_vec_[:, 1] .+= body_force_vec;
+    for (i_dim, dv_i) in enumerate(body_force_vec)
+        Threads.atomic_add!(particle.dv_vec_[i_dim], dv_i);
+    end
     updateVelocity!(particle, dt);
     return nothing;
 end

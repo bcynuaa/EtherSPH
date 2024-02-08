@@ -10,7 +10,7 @@ function continuity!(
     neighbour::NeighbourType where NeighbourType <: AbstractNeighbour
 )::Nothing where ParticleType <: FluidParticle
     drho::typeof(p_i.rho_) = dot(neighbour.v_vec_, neighbour.kernel_gradient_vec_);
-    p_i.drho_[Threads.threadid()] += p_j.mass_ * drho;
-    p_j.drho_[Threads.threadid()] += p_i.mass_ * drho;
+    Threads.atomic_add!(p_i.drho_, p_j.mass_ * drho);
+    Threads.atomic_add!(p_j.drho_, p_i.mass_ * drho);
     return nothing;
 end

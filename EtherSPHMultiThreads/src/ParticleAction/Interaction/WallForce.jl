@@ -25,6 +25,8 @@ function wallForce!(
     verticle_u::typeof(psi) = dot(neighbour.v_vec_, p_j.normal_vec_);
     beta = verticle_u > 0. ? 0. : 1.;
     r_psi::typeof(psi) = (0.01 * p_i.c_^2 + beta * p_i.c_ * abs(verticle_u)) / smooth_kernel.h_ * abs(1. - q) / sqrt(q);
-    p_i.dv_vec_[:, Threads.threadid()] .+= r_psi * p_xi * p_j.normal_vec_;
+    for (i_dim, dv_i) in enumerate(r_psi * p_xi * p_j.normal_vec_)
+        Threads.atomic_add!(p_i.dv_vec_[i_dim], dv_i);
+    end
     return nothing;
 end
