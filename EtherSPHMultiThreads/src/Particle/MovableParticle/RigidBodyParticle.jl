@@ -36,7 +36,7 @@ mutable struct RigidBody2D{
     RealType <: AbstractFloat, 
     ArrayType <: AbstractVector{RealType},
     AtomArrayType <: AbstractVector{Base.Threads.Atomic{RealType}},
-} <: RigidBody
+} <: AbstractRigidBody
     x_vec_::ArrayType # centroid position
     v_vec_::ArrayType # centroid velocity
     dv_vec_::AtomArrayType # centroid acceleration
@@ -69,14 +69,14 @@ function joinForce!(
     # ! after calculation
     # ! dv_vec_ is ∑ⱼ mⱼ aⱼ
     # ! omega_ is ∑ⱼ mⱼ (rⱼ × aⱼ)
-    force_vec = similar(rigid_body.x_vec_);
+    force_vec = similar(rigid_body_2d.x_vec_);
     Threads.@threads for particle in rigid_body_particles
         for i_dim in eachindex(force_vec)
             force_vec[i_dim] = particle.dv_vec_[i_dim][] * particle.mass_;
             Threads.atomic_add!(rigid_body_2d.dv_vec_[i_dim], force_vec[i_dim]);
             particle.dv_vec_[i_dim][] = 0.;
         end
-        r_vec = particle.x_vec .- rigid_body_2d.x_vec;
+        r_vec = particle.x_vec_ .- rigid_body_2d.x_vec_;
         Threads.atomic_add!(rigid_body_2d.alpha_, r_vec[1]*force_vec[2] - r_vec[2]*force_vec[1]);
     end
     return nothing;
@@ -104,7 +104,7 @@ function rigidBodyMotion!(
     rigid_body_2d.omega_ += rigid_body_2d.alpha_[] / rigid_body_2d.inertia_ * dt;
     rigid_body_2d.alpha_[] = 0.;
     Threads.@threads for particle in rigid_body_particles
-        r_vec = particle.x_vec .- rigid_body_2d.x_vec;
+        r_vec = particle.x_vec_ .- rigid_body_2d.x_vec_;
         tau_vec = [-r_vec[2], r_vec[1]];
         particle.v_vec_ .= rigid_body_2d.v_vec_ .+ rigid_body_2d.omega_ * tau_vec;
         particle.x_vec_ .+= particle.v_vec_ * dt;

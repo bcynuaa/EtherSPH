@@ -41,7 +41,7 @@ dr_forward_euler = FixedDensityReinitializedForwardEuler(
 const step_digit = div(total_step, output_step) |> Int |> string |> length;
 const file_name = "float_object";
 const file_suffix = ".vtp";
-const dir_path = "./FloatObjectData/";
+const dir_path = "./FloatObjectData2/";
 const fileld_symbols = [:rho_, :p_, :c_];
 const fileld_names = ["Density", "Pressure", "SoundSpeed"];
 vtp_io = VTPIO(step_digit, file_name, file_suffix, dir_path, fileld_symbols, fileld_names);
@@ -155,7 +155,7 @@ const float_object_inertia = float_object_mass * float_object_edge_length^2 / 6;
 float_object = RigidBody2D(Float64);
 float_object.mass_ = float_object_rho * float_object_edge_length^2;
 float_object.inertia_ = float_object.mass_ * float_object_edge_length^2 / 6;
-float_object.x_vec_ = [water_width + float_object_edge_length/2, water_height/4 + float_object_edge_length/2];
+float_object.x_vec_ = [water_width / 2, water_height + float_object_edge_length / 2];
 
 fo_bottom_particles = createRectangleParticles(
     RigidBodyParticleMTh, dr,

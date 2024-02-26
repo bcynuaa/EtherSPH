@@ -63,6 +63,10 @@
         pressureForce!(fluid_particles[f_r_b_neighbour.i_], rigid_body_particles[f_r_b_neighbour.j_], f_r_b_neighbour, smooth_kernel, wc_lm);
         viscosityForce!(fluid_particles[f_r_b_neighbour.i_], rigid_body_particles[f_r_b_neighbour.j_], f_r_b_neighbour, smooth_kernel, wc_lm);
     end
+    Threads.@threads for f_p in fluid_particles
+        updateVelocity!(f_p, fti_dr_forward_euler.dt_, wc_lm.body_force_vec_);
+        updatePosition!(f_p, fti_dr_forward_euler.dt_);
+    end
     if isDensityReinitializedStep(step, fti_dr_forward_euler)
         reconstructScalar!(fluid_particles, :rho_, fluid_neighbours, smooth_kernel);
     end
@@ -76,7 +80,7 @@
         deleteat!(fluid_particles, out_of_bounds_index);
     end
     Threads.@threads for r_b_neighbour in rigid_body_wall_neighbours
-        wallForce!(rigid_body_particles[r_b_neighbour.i_], wall_particles[r_b_neighbour.j_], r_b_neighbour, smooth_kernel);
+        wallForce!(rigid_body_particles[r_b_neighbour.i_], wall_particles[r_b_neighbour.j_], r_b_neighbour, smooth_kernel, wc_lm);
     end
     joinForce!(rigid_body, rigid_body_particles);
     applyBodyForce!(rigid_body, wc_lm.body_force_vec_);
