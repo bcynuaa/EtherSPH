@@ -8,3 +8,4 @@ include("./UpdateDensity.jl");
 include("./UpdatePressure.jl");
 include("./UpdateVelocity.jl");
 include("./UpdatePosition.jl");
+include("./UpdateTemperature.jl");

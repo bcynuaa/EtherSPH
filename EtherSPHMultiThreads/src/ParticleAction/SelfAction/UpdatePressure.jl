@@ -6,7 +6,7 @@
 
  function updatePressure!(
     p::ParticleType where ParticleType <: FluidParticle,
-    wc_lm::WeaklyCompressibleLiquidModel
+    wc_lm::WeaklyCompressibleLiquidModelType where WeaklyCompressibleLiquidModelType <: WeaklyCompressibleLiquidModel
 )::Nothing
     #=
     p = c₀²ρ₀/γ * [(ρ/ρ₀)^γ - 1]

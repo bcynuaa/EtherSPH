@@ -25,7 +25,7 @@ function pressureForce!(
     p_i::ParticleType,
     neighbour::NeighbourType where NeighbourType <: AbstractNeighbour,
     smooth_kernel::SmoothKernelType where SmoothKernelType <: SmoothKernel,
-    wc_lm::WeaklyCompressibleLiquidModel
+    wc_lm::WeaklyCompressibleLiquidModelType where WeaklyCompressibleLiquidModelType <: WeaklyCompressibleLiquidModel
 )::Nothing where ParticleType <: FluidParticle
     p_rho2::typeof(p_i.p_) = p_i.p_ / p_i.rho_^2 + wc_lm.p_0_ / wc_lm.rho_0_^2;
     p_rho2 += abs(p_rho2) * 0.01 * neighbour.kernel_value_ / kernelValue(p_i.gap_, smooth_kernel);
@@ -40,7 +40,7 @@ function pressureForce!(
     p_j::ParticleType2 where ParticleType2 <: SolidParticle,
     neighbour::NeighbourType where NeighbourType <: AbstractNeighbour,
     smooth_kernel::SmoothKernelType where SmoothKernelType <: SmoothKernel,
-    wc_lm::WeaklyCompressibleLiquidModel
+    wc_lm::WeaklyCompressibleLiquidModelType where WeaklyCompressibleLiquidModelType <: WeaklyCompressibleLiquidModel
 )::Nothing
     p_rho2::typeof(p_i.p_) = p_i.p_ / p_i.rho_^2 + wc_lm.p_0_ / wc_lm.rho_0_^2;
     p_rho2 += abs(p_rho2) * 0.01 * neighbour.kernel_value_ / kernelValue((p_i.gap_ + p_j.gap_) / 2., smooth_kernel);

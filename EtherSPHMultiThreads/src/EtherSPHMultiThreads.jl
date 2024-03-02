@@ -20,11 +20,11 @@ function showTypeTree(abstract_type::DataType)::Nothing
 end
 
 println("="^100);
-showTypeTree(AbstractKernel);
-showTypeTree(AbstractParticle);
-showTypeTree(AbstractEquationModel);
-showTypeTree(AbstractNeighbour);
-showTypeTree(AbstractTimeDiscretization);
+
+for ether_sph_type in [AbstractKernel, AbstractParticle, AbstractEquationModel, AbstractNeighbour, AbstractTimeDiscretization]
+    showTypeTree(ether_sph_type);
+    println("-"^80);
+end
 
 println("Welcome to EtherSPHMultiThreads.jl!");
 println("="^100);

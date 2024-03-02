@@ -36,7 +36,7 @@ function wallForce!(
     p_j::WallParticleType where WallParticleType <: FixedParticle,
     neighbour::NeighbourType where NeighbourType <: AbstractNeighbour,
     smooth_kernel::SmoothKernelType where SmoothKernelType <: SmoothKernel,
-    wc_lm::WeaklyCompressibleLiquidModel
+    wc_lm::WeaklyCompressibleLiquidModelType where WeaklyCompressibleLiquidModelType <: WeaklyCompressibleLiquidModel
 )::Nothing
     # Roger & Dalrymple, 2008
     psi::eltype(p_i.x_vec_) = abs(dot(neighbour.r_vec_, p_j.normal_vec_));
