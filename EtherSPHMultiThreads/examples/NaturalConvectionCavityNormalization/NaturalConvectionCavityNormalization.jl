@@ -7,15 +7,22 @@
 include("../../src/EtherSPHMultiThreads.jl"); 
 using .EtherSPHMultiThreads;
 
+# in my personal practice: 2024/03/01-2024/03/05
+
+# c_0 = 3. for rayleigh_number = 1e3
+# c_0 = 3.5 for rayleigh_number = 1e4
+# c_0 = 4. for rayleigh_number = 1e5
+# c_0 = 4.5 for rayleigh_number = 1e6
+
 const prandtl_number = 0.71;
-const rayleigh_number = 1e6;
+const rayleigh_number = 1e3;
 
 const cavity_length = 1.;
 const rho_0 = 1.;
-const c_0 = 6.;
+const c_0 = 3.;
 const nu_0 = prandtl_number / sqrt(rayleigh_number);
 const mu_0 = rho_0 * nu_0;
-const p_0 = 0.015 * rho_0 * c_0^2;
+const p_0 = 0.02 * rho_0 * c_0^2;
 const gamma = 7;
 const alpha = nu_0 / prandtl_number;
 
@@ -35,14 +42,14 @@ const th_wc_lm = ThermalWeaklyCompressibleLiquidModel(
 );
 
 const dim = 2;
-const dr = 0.02;
+const dr = 0.01;
 const gap = dr;
 const influence_radius = 3. * dr;
 
 const smooth_kernel = SmoothKernel(influence_radius, dim, CubicSpline);
 
 const dt = 0.1 * smooth_kernel.influence_radius_ / c_0;
-const total_time = 100.;
+const total_time = 30.;
 const total_step = total_time / dt |> round |> Int;
 const output_step = 100;
 const density_reinitialized_step = 5;

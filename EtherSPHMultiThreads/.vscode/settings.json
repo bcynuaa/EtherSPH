@@ -16,5 +16,5 @@
         }
     },
     // julia env 1.9.4
-    "julia.executablePath": "~/.~/miniconda3/envs/pyju/bin/julia",
+    "julia.executablePath": "/home/bcynuaa/miniconda3/envs/pyju/bin/julia",
 }
