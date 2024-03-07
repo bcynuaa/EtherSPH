@@ -37,7 +37,7 @@ function getParticleFields(
     particle_field_symbols = fieldnames(eltype(particle))
     for i_field in eachindex(field_symbols)
         if field_symbols[i_field] in particle_field_symbols
-            Threads.@threads for i_particle in eachindex(particle)
+            @floop for i_particle in eachindex(particle)
                 fields[i_field, i_particle] = getfield(particle[i_particle], field_symbols[i_field])
             end
         else
@@ -64,17 +64,17 @@ function writeVTP(
         particle_number = length(particles)
         fields[:, current_point_index:current_point_index+particle_number-1] = getParticleFields(vtp_io.field_symbols_, particles)
         if eltype(particles) <: MovableParticle
-            Threads.@threads for i_particle in eachindex(particles)
+            @floop for i_particle in eachindex(particles)
                 points[:, current_point_index+i_particle-1] = particles[i_particle].x_vec_
                 velocitys[:, current_point_index+i_particle-1] = particles[i_particle].v_vec_
             end
         elseif eltype(particles) <: VelocityParticle
-            Threads.@threads for i_particle in eachindex(particles)
+            @floop for i_particle in eachindex(particles)
                 points[:, current_point_index+i_particle-1] = particles[i_particle].x_vec_
                 velocitys[:, current_point_index+i_particle-1] = particles[i_particle].v_vec_
             end
         else
-            Threads.@threads for i_particle in eachindex(particles)
+            @floop for i_particle in eachindex(particles)
                 points[:, current_point_index+i_particle-1] = particles[i_particle].x_vec_
                 velocitys[:, current_point_index+i_particle-1] .= NaN
             end

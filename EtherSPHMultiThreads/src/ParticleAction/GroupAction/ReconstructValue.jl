@@ -10,7 +10,7 @@ function reconstructScalar!(
     neighbours::NeighbourArrayType where NeighbourArrayType <: AbstractVector{<:AbstractNeighbour},
     smooth_kernel::SmoothKernelType where SmoothKernelType <: SmoothKernel
 )::Nothing
-    Threads.@threads for neighbour in neighbours
+    @floop for neighbour in neighbours
         Threads.atomic_add!(particles[neighbour.i_].sum_kernel_weight_, 
             neighbour.kernel_value_ * particles[neighbour.j_].mass_ / particles[neighbour.j_].rho_);
         Threads.atomic_add!(particles[neighbour.i_].sum_weighted_scalar_, getfield(particles[neighbour.j_], value_symbol) *
@@ -20,7 +20,7 @@ function reconstructScalar!(
         Threads.atomic_add!(particles[neighbour.j_].sum_weighted_scalar_, getfield(particles[neighbour.i_], value_symbol) *
             neighbour.kernel_value_ * particles[neighbour.i_].mass_ / particles[neighbour.i_].rho_);
     end
-    Threads.@threads for particle in particles
+    @floop for particle in particles
         Threads.atomic_add!(particle.sum_kernel_weight_, 
             smooth_kernel.kernel_0_ * particle.mass_ / particle.rho_);
         Threads.atomic_add!(particle.sum_weighted_scalar_, getfield(particle, value_symbol) *

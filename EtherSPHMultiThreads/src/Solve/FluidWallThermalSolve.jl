@@ -36,30 +36,30 @@ function eachStep!(
         fluid_particles, thermostatic_wall_particles,
         smooth_kernel
     );
-    Threads.@threads for f_neighbour in fluid_neighbours
+    @floop for f_neighbour in fluid_neighbours
         continuity!(fluid_particles[f_neighbour.i_], fluid_particles[f_neighbour.j_], f_neighbour);
         thermalConvection!(fluid_particles[f_neighbour.i_], fluid_particles[f_neighbour.j_], f_neighbour, smooth_kernel, th_wc_lm);
     end
-    Threads.@threads for f_p in fluid_particles
+    @floop for f_p in fluid_particles
         updateDensity!(f_p, fti_dr_forward_euler.dt_);
         updatePressure!(f_p, th_wc_lm);
     end
-    Threads.@threads for f_neighbour in fluid_neighbours
+    @floop for f_neighbour in fluid_neighbours
         pressureForce!(fluid_particles[f_neighbour.i_], fluid_particles[f_neighbour.j_], f_neighbour, smooth_kernel);
         viscosityForce!(fluid_particles[f_neighbour.i_], fluid_particles[f_neighbour.j_], f_neighbour, smooth_kernel, th_wc_lm);
     end
-    Threads.@threads for f_wall_neighbour in fluid_wall_neighbours
+    @floop for f_wall_neighbour in fluid_wall_neighbours
         wallForce!(fluid_particles[f_wall_neighbour.i_], wall_particles[f_wall_neighbour.j_], f_wall_neighbour, smooth_kernel);
         pressureForce!(fluid_particles[f_wall_neighbour.i_], f_wall_neighbour, smooth_kernel, th_wc_lm);
         viscosityForce!(fluid_particles[f_wall_neighbour.i_], wall_particles[f_wall_neighbour.j_], f_wall_neighbour, smooth_kernel, th_wc_lm);
     end
-    Threads.@threads for f_thermostatic_wall_neighbour in fluid_thermostatic_wall_neighbours
+    @floop for f_thermostatic_wall_neighbour in fluid_thermostatic_wall_neighbours
         wallForce!(fluid_particles[f_thermostatic_wall_neighbour.i_], thermostatic_wall_particles[f_thermostatic_wall_neighbour.j_], f_thermostatic_wall_neighbour, smooth_kernel);
         pressureForce!(fluid_particles[f_thermostatic_wall_neighbour.i_], f_thermostatic_wall_neighbour, smooth_kernel, th_wc_lm);
         viscosityForce!(fluid_particles[f_thermostatic_wall_neighbour.i_], thermostatic_wall_particles[f_thermostatic_wall_neighbour.j_], f_thermostatic_wall_neighbour, smooth_kernel, th_wc_lm);
         thermalConvection!(fluid_particles[f_thermostatic_wall_neighbour.i_], thermostatic_wall_particles[f_thermostatic_wall_neighbour.j_], f_thermostatic_wall_neighbour, smooth_kernel, th_wc_lm);
     end
-    Threads.@threads for f_p in fluid_particles
+    @floop for f_p in fluid_particles
         updateTemperature!(f_p, fti_dr_forward_euler.dt_);
         updateVelocity!(f_p, fti_dr_forward_euler.dt_, -th_wc_lm.body_force_vec_ * th_wc_lm.beta_ * (f_p.t_-th_wc_lm.t_0_));
         updatePosition!(f_p, fti_dr_forward_euler.dt_);

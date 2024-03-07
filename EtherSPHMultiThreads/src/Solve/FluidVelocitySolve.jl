@@ -28,23 +28,23 @@ function eachStep!(
         fluid_particles, velocity_particles,
         smooth_kernel
     );
-    Threads.@threads for f_neighbour in fluid_neighbours
+    @floop for f_neighbour in fluid_neighbours
         continuity!(fluid_particles[f_neighbour.i_], fluid_particles[f_neighbour.j_], f_neighbour);
     end
-    Threads.@threads for f_p in fluid_particles
+    @floop for f_p in fluid_particles
         updateDensity!(f_p, fti_dr_forward_euler.dt_);
         updatePressure!(f_p, wc_lm);
     end
-    Threads.@threads for f_neighbour in fluid_neighbours
+    @floop for f_neighbour in fluid_neighbours
         pressureForce!(fluid_particles[f_neighbour.i_], fluid_particles[f_neighbour.j_], f_neighbour, smooth_kernel);
         viscosityForce!(fluid_particles[f_neighbour.i_], fluid_particles[f_neighbour.j_], f_neighbour, smooth_kernel, wc_lm);
     end
-    Threads.@threads for f_v_neighbour in fluid_velocity_neighbours
+    @floop for f_v_neighbour in fluid_velocity_neighbours
         wallForce!(fluid_particles[f_v_neighbour.i_], velocity_particles[f_v_neighbour.j_], f_v_neighbour, smooth_kernel);
         pressureForce!(fluid_particles[f_v_neighbour.i_], f_v_neighbour, smooth_kernel, wc_lm);
         viscosityForce!(fluid_particles[f_v_neighbour.i_], velocity_particles[f_v_neighbour.j_], f_v_neighbour, smooth_kernel, wc_lm);
     end
-    Threads.@threads for f_p in fluid_particles
+    @floop for f_p in fluid_particles
         updateVelocity!(f_p, fti_dr_forward_euler.dt_, wc_lm.body_force_vec_);
         updatePosition!(f_p, fti_dr_forward_euler.dt_);
     end

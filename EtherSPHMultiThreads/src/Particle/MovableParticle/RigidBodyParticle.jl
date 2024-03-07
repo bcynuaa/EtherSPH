@@ -70,7 +70,7 @@ function joinForce!(
     # ! dv_vec_ is ∑ⱼ mⱼ aⱼ
     # ! omega_ is ∑ⱼ mⱼ (rⱼ × aⱼ)
     force_vec = similar(rigid_body_2d.x_vec_);
-    Threads.@threads for particle in rigid_body_particles
+    @floop for particle in rigid_body_particles
         for i_dim in eachindex(force_vec)
             force_vec[i_dim] = particle.dv_vec_[i_dim][] * particle.mass_;
             Threads.atomic_add!(rigid_body_2d.dv_vec_[i_dim], force_vec[i_dim]);
@@ -103,7 +103,7 @@ function rigidBodyMotion!(
     end
     rigid_body_2d.omega_ += rigid_body_2d.alpha_[] / rigid_body_2d.inertia_ * dt;
     rigid_body_2d.alpha_[] = 0.;
-    Threads.@threads for particle in rigid_body_particles
+    @floop for particle in rigid_body_particles
         r_vec = particle.x_vec_ .- rigid_body_2d.x_vec_;
         tau_vec = [-r_vec[2], r_vec[1]];
         particle.v_vec_ .= rigid_body_2d.v_vec_ .+ rigid_body_2d.omega_ * tau_vec;

@@ -43,27 +43,27 @@
         rigid_body_particles, wall_particles,
         smooth_kernel
     );
-    Threads.@threads for f_neighbour in fluid_neighbours
+    @floop for f_neighbour in fluid_neighbours
         continuity!(fluid_particles[f_neighbour.i_], fluid_particles[f_neighbour.j_], f_neighbour);
     end
-    Threads.@threads for f_p in fluid_particles
+    @floop for f_p in fluid_particles
         updateDensity!(f_p, fti_dr_forward_euler.dt_);
         updatePressure!(f_p, wc_lm);
     end
-    Threads.@threads for f_neighbour in fluid_neighbours
+    @floop for f_neighbour in fluid_neighbours
         pressureForce!(fluid_particles[f_neighbour.i_], fluid_particles[f_neighbour.j_], f_neighbour, smooth_kernel);
         viscosityForce!(fluid_particles[f_neighbour.i_], fluid_particles[f_neighbour.j_], f_neighbour, smooth_kernel, wc_lm);
     end
-    Threads.@threads for f_w_neighbour in fluid_wall_neighbours
+    @floop for f_w_neighbour in fluid_wall_neighbours
         wallForce!(fluid_particles[f_w_neighbour.i_], wall_particles[f_w_neighbour.j_], f_w_neighbour, smooth_kernel);
         viscosityForce!(fluid_particles[f_w_neighbour.i_], wall_particles[f_w_neighbour.j_], f_w_neighbour, smooth_kernel, wc_lm);
     end
-    Threads.@threads for f_r_b_neighbour in fluid_rigid_body_neighbours
+    @floop for f_r_b_neighbour in fluid_rigid_body_neighbours
         wallForce!(fluid_particles[f_r_b_neighbour.i_], rigid_body_particles[f_r_b_neighbour.j_], f_r_b_neighbour, smooth_kernel);
         pressureForce!(fluid_particles[f_r_b_neighbour.i_], rigid_body_particles[f_r_b_neighbour.j_], f_r_b_neighbour, smooth_kernel, wc_lm);
         viscosityForce!(fluid_particles[f_r_b_neighbour.i_], rigid_body_particles[f_r_b_neighbour.j_], f_r_b_neighbour, smooth_kernel, wc_lm);
     end
-    Threads.@threads for f_p in fluid_particles
+    @floop for f_p in fluid_particles
         updateVelocity!(f_p, fti_dr_forward_euler.dt_, wc_lm.body_force_vec_);
         updatePosition!(f_p, fti_dr_forward_euler.dt_);
     end
@@ -79,7 +79,7 @@
         end
         deleteat!(fluid_particles, out_of_bounds_index);
     end
-    Threads.@threads for r_b_neighbour in rigid_body_wall_neighbours
+    @floop for r_b_neighbour in rigid_body_wall_neighbours
         wallForce!(rigid_body_particles[r_b_neighbour.i_], wall_particles[r_b_neighbour.j_], r_b_neighbour, smooth_kernel, wc_lm);
     end
     joinForce!(rigid_body, rigid_body_particles);

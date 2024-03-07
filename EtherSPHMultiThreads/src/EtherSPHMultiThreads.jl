@@ -1,8 +1,11 @@
 module EtherSPHMultiThreads
 
 using LinearAlgebra;
+using FLoops;
 using TypeTree;
 using ExportAll;
+
+FLoops.assistant(false);
 
 include("./Kernel/Kernel.jl");
 include("./Particle/Particle.jl");
